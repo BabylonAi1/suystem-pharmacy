@@ -349,11 +349,83 @@
     }
     .sidebar.collapsed .sidebar-footer { opacity: 0; }
     .content {
-      margin-right: 288px;
-      padding: 44px 36px 80px;
+      margin-right: 0;                     /* sidebar hidden — full width */
+      padding: 44px 36px 140px;            /* extra bottom for Dock clearance */
       min-height: 100vh;
       transition: margin-right 0.4s var(--ease-smooth);
     }
+    /* Sidebar removed visually — kept in DOM only for JS state (nav-btn click sync) */
+    .sidebar { display: none !important; }
+    .sidebar.collapsed ~ .content { margin-right: 0 !important; }
+
+    /* ═════════════════════ FLOATING THEME TOGGLE (replaces sidebar toggle) ═════════════════════ */
+    .floating-theme-toggle {
+      position: fixed;
+      top: 24px;
+      left: 24px;
+      z-index: 70;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px) saturate(1.5);
+      -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 4px 12px -2px rgba(15, 23, 42, 0.08),
+        0 12px 28px -12px rgba(15, 23, 42, 0.15);
+      transition: transform 0.3s var(--ease-smooth), box-shadow 0.3s var(--ease-smooth), background 0.3s var(--ease-smooth);
+      padding: 0;
+    }
+    .floating-theme-toggle:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 8px 16px -2px rgba(15, 23, 42, 0.12),
+        0 16px 32px -12px rgba(15, 23, 42, 0.2);
+    }
+    .floating-theme-toggle .ft-sun,
+    .floating-theme-toggle .ft-moon {
+      position: absolute;
+      transition: opacity 0.4s var(--ease-smooth), transform 0.4s var(--ease-bounce);
+    }
+    .floating-theme-toggle .ft-moon { opacity: 0; transform: rotate(-45deg) scale(0.5); }
+    [data-theme="dark"] .floating-theme-toggle {
+      background: rgba(22, 27, 34, 0.6);
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 8px 24px -8px rgba(0, 0, 0, 0.5);
+    }
+    [data-theme="dark"] .floating-theme-toggle .ft-sun { opacity: 0; transform: rotate(45deg) scale(0.5); }
+    [data-theme="dark"] .floating-theme-toggle .ft-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* Badge on dock items (for alerts) */
+    .dock-badge {
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      background: var(--danger);
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 999px;
+      min-width: 18px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5), 0 0 0 2px var(--off-white, #fafdfc);
+      pointer-events: none;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+    .dock-badge[data-empty="true"] { display: none; }
+    [data-theme="dark"] .dock-badge { box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5), 0 0 0 2px #060912; }
     .sidebar.collapsed ~ .content { margin-right: 120px; }
     .page { display: none; }
     .page.active { display: block; animation: pageEnter 0.5s var(--ease-smooth); }
@@ -1431,7 +1503,8 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
-      max-height: calc(100vh - 80px);
+      /* Reserve space for Dock + finish button visibility */
+      max-height: calc(100vh - 220px);
       overflow-y: auto;
       overscroll-behavior: contain;
       scrollbar-gutter: stable;
@@ -5488,6 +5561,47 @@
     </div>
   </div>
 
+  <!-- Floating Theme Toggle (replaces sidebar toggle) -->
+  <button class="floating-theme-toggle" id="floatingThemeToggle" aria-label="تبديل المظهر" title="تبديل المظهر">
+    <span class="ft-sun">☀️</span>
+    <span class="ft-moon">🌙</span>
+  </button>
+
+  <!-- Dock (Quick Actions Floating Bar) -->
+  <div class="dock-outer" id="dockOuter" aria-label="شريط الوصول السريع">
+    <div class="dock-panel" id="dockPanel" role="toolbar" aria-label="إجراءات سريعة">
+      <button class="dock-item" data-page="dashboard" type="button" aria-label="لوحة التحكم">
+        <span class="dock-icon">📊</span>
+        <span class="dock-label">لوحة التحكم</span>
+      </button>
+      <button class="dock-item" data-page="medications" type="button" aria-label="الأدوية">
+        <span class="dock-icon">💊</span>
+        <span class="dock-label">الأدوية</span>
+      </button>
+      <button class="dock-item" data-page="sales" type="button" aria-label="نقاط البيع">
+        <span class="dock-icon">🛒</span>
+        <span class="dock-label">نقاط البيع</span>
+      </button>
+      <button class="dock-item" data-page="alerts" type="button" aria-label="التنبيهات">
+        <span class="dock-icon">🔔</span>
+        <span class="dock-badge" id="dockAlertsBadge" data-empty="true">0</span>
+        <span class="dock-label">التنبيهات</span>
+      </button>
+      <button class="dock-item" data-page="invoices" type="button" aria-label="الفواتير">
+        <span class="dock-icon">🧾</span>
+        <span class="dock-label">الفواتير</span>
+      </button>
+      <button class="dock-item" data-page="reports" type="button" aria-label="التقارير">
+        <span class="dock-icon">📈</span>
+        <span class="dock-label">التقارير</span>
+      </button>
+      <button class="dock-item" data-page="activity" type="button" aria-label="سجل النشاط">
+        <span class="dock-icon">📋</span>
+        <span class="dock-label">سجل النشاط</span>
+      </button>
+    </div>
+  </div>
+
   <!-- إشعارات Toast -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -5698,6 +5812,12 @@
       setTimeout(() => document.body.classList.remove('theme-transitioning'), 550);
     });
 
+    // Floating theme toggle — delegates to the original toggle
+    const floatingThemeBtn = $('floatingThemeToggle');
+    if (floatingThemeBtn) {
+      floatingThemeBtn.addEventListener('click', () => themeToggle.click());
+    }
+
     function renderDashboard() {
       const today = todayStr();
       const todaySales = invoices.filter(inv => inv.date.startsWith(today) && !isInvoiceRefunded(inv));
@@ -5761,6 +5881,11 @@
       const badge = $('alertsBadge');
       badge.textContent = totalAlerts;
       badge.dataset.empty = totalAlerts === 0;
+      const dockBadge = $('dockAlertsBadge');
+      if (dockBadge) {
+        dockBadge.textContent = totalAlerts;
+        dockBadge.dataset.empty = totalAlerts === 0;
+      }
     }
 
     function getMedStatus(m) {
@@ -7386,6 +7511,75 @@
         else if ($('invoiceModal').classList.contains('active')) $('invoiceModal').classList.remove('active');
       }
     });
+
+    // ============== Dock (Magnification + Navigation) ==============
+    (function initDock() {
+      const panel = $('dockPanel');
+      if (!panel) return;
+      const items = Array.from(panel.querySelectorAll('.dock-item'));
+      const BASE_SIZE = 52;
+      const MAGNIFY = 72;
+      const DISTANCE = 140;
+      let raf = null;
+
+      // Navigate via dock + sync active state with main nav
+      items.forEach(item => {
+        item.addEventListener('click', () => {
+          const targetPage = item.dataset.page;
+          const navBtn = document.querySelector(`.nav-btn[data-page="${targetPage}"]`);
+          if (navBtn) navBtn.click();
+        });
+      });
+
+      function syncActive() {
+        const activeNav = document.querySelector('.nav-btn.active');
+        const activePage = activeNav ? activeNav.dataset.page : 'dashboard';
+        items.forEach(it => {
+          it.classList.toggle('active', it.dataset.page === activePage);
+        });
+      }
+      syncActive();
+      const navObserver = new MutationObserver(syncActive);
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        navObserver.observe(b, { attributes: true, attributeFilter: ['class'] });
+      });
+
+      function applyMagnification(mouseX) {
+        items.forEach(item => {
+          const rect = item.getBoundingClientRect();
+          const itemCenter = rect.left + rect.width / 2;
+          const dist = Math.abs(mouseX - itemCenter);
+          let size = BASE_SIZE;
+          if (dist < DISTANCE) {
+            const ratio = 1 - dist / DISTANCE;
+            // Smooth ease-out (spring-like)
+            const eased = 1 - Math.pow(1 - ratio, 3);
+            size = BASE_SIZE + (MAGNIFY - BASE_SIZE) * eased;
+          }
+          item.style.width = size + 'px';
+          item.style.height = size + 'px';
+        });
+      }
+
+      panel.addEventListener('mousemove', (e) => {
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => applyMagnification(e.clientX));
+      });
+
+      panel.addEventListener('mouseleave', () => {
+        if (raf) cancelAnimationFrame(raf);
+        items.forEach(item => {
+          item.style.width = BASE_SIZE + 'px';
+          item.style.height = BASE_SIZE + 'px';
+        });
+      });
+
+      // Initialize sizes
+      items.forEach(item => {
+        item.style.width = BASE_SIZE + 'px';
+        item.style.height = BASE_SIZE + 'px';
+      });
+    })();
 
     checkExpiryAlerts();
     renderDashboard();
