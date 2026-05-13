@@ -56,12 +56,17 @@
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     *::selection { background: rgba(16, 185, 129, 0.2); color: var(--pharmacy-green-deep); }
-    html, body {
+    html {
+      overflow-x: hidden;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+    body {
       font-family: 'Cairo', 'Tajawal', 'Inter', system-ui, -apple-system, sans-serif;
       background: #f6fbfa;
       color: var(--text-dark);
       min-height: 100vh;
-      overflow-x: hidden;
+      /* No overflow on body — html is the scroll container */
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "ss01" 1;
@@ -345,7 +350,7 @@
     .sidebar.collapsed .sidebar-footer { opacity: 0; }
     .content {
       margin-right: 288px;
-      padding: 44px 36px 140px;            /* extra bottom for Dock clearance */
+      padding: 44px 36px 80px;
       min-height: 100vh;
       transition: margin-right 0.4s var(--ease-smooth);
     }
@@ -1426,8 +1431,7 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
-      /* Reserve space for Dock + finish button visibility */
-      max-height: calc(100vh - 220px);
+      max-height: calc(100vh - 80px);
       overflow-y: auto;
       overscroll-behavior: contain;
       scrollbar-gutter: stable;
@@ -1967,53 +1971,58 @@
     .close-btn:hover { background: var(--danger); color: white; transform: scale(1.05); border-color: var(--danger); }
     .modal-actions { display: flex; justify-content: flex-start; gap: 10px; margin-top: 22px; }
     .invoice-modal { max-width: 480px; }
+    /* ═════════════════════ INVOICE RECEIPT — Always Readable ═════════════════════
+       White printable receipt. Text colors are HARDCODED (not theme variables)
+       so the invoice stays fully legible in both light and dark modes. */
     #invoiceContent {
-      background: white;
+      background: #ffffff;
       padding: 26px;
       border-radius: var(--radius-md);
-      color: var(--text-dark);
-      border: 1px solid var(--border-soft);
+      color: #1f2937;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      opacity: 1;
     }
-    #invoiceContent h4 { text-align: center; color: var(--text-dark); margin-bottom: 6px; font-size: 20px; font-weight: 900; letter-spacing: -0.02em; }
-    #invoiceContent .invoice-meta {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12.5px;
-      color: var(--text-light);
-      margin: 14px 0;
-      padding-bottom: 14px;
-      border-bottom: 1px dashed var(--border-strong);
-      font-weight: 600;
-    }
-    #invoiceContent .invoice-line { display: flex; justify-content: space-between; padding: 10px 0; font-size: 14px; font-weight: 500; }
-    #invoiceContent .invoice-total {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 2px solid var(--pharmacy-green);
-      display: flex;
-      justify-content: space-between;
+    #invoiceContent * { opacity: 1; }
+    #invoiceContent h4 {
+      text-align: center;
+      color: #0f172a;
+      margin-bottom: 6px;
       font-size: 20px;
       font-weight: 900;
-      color: var(--pharmacy-green-deep);
       letter-spacing: -0.02em;
+      opacity: 1;
     }
     #invoiceContent .invoice-subtitle {
       text-align: center;
       font-size: 13px;
-      color: var(--text-light);
+      color: #6b7280;
       font-weight: 600;
+      opacity: 1;
     }
+    #invoiceContent .invoice-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12.5px;
+      color: #374151;
+      margin: 14px 0;
+      padding-bottom: 14px;
+      border-bottom: 1px dashed rgba(15, 23, 42, 0.18);
+      font-weight: 600;
+      opacity: 1;
+    }
+    #invoiceContent .invoice-meta span { color: #374151; }
     #invoiceContent .invoice-pay-method {
       text-align: center;
       font-size: 13px;
       padding: 8px 0;
       margin-bottom: 12px;
-      color: var(--text-mid);
+      color: #374151;
       font-weight: 600;
-      border-bottom: 1px dashed var(--border-strong);
+      border-bottom: 1px dashed rgba(15, 23, 42, 0.18);
+      opacity: 1;
     }
     #invoiceContent .invoice-pay-method strong {
-      color: var(--pharmacy-green-deep);
+      color: #065f46;
       font-weight: 800;
     }
     #invoiceContent .invoice-items-table {
@@ -2023,40 +2032,94 @@
       font-size: 13px;
     }
     #invoiceContent .invoice-items-table th {
-      background: linear-gradient(180deg, rgba(16, 185, 129, 0.08), rgba(6, 182, 212, 0.05));
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.06));
       text-align: right;
-      padding: 8px 10px;
+      padding: 10px;
       font-weight: 700;
-      color: var(--text-mid);
+      color: #1f2937;
       font-size: 11.5px;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      border-bottom: 1px solid var(--border-soft);
+      border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+      opacity: 1;
     }
     #invoiceContent .invoice-items-table td {
-      padding: 8px 10px;
-      border-bottom: 1px dashed var(--border-soft);
-      color: var(--text-dark);
+      padding: 10px;
+      border-bottom: 1px dashed rgba(15, 23, 42, 0.1);
+      color: #1f2937;
       font-weight: 500;
       font-size: 13px;
       vertical-align: middle;
+      opacity: 1;
     }
     #invoiceContent .invoice-items-table td.num,
     #invoiceContent .invoice-items-table th.num { text-align: left; }
     #invoiceContent .invoice-items-table tr:last-child td { border-bottom: none; }
     #invoiceContent .invoice-totals { margin-top: 10px; }
-    #invoiceContent .invoice-discount-line { color: var(--danger); }
-    #invoiceContent .invoice-change-line { color: var(--pharmacy-green-deep); font-weight: 700; }
-    #invoiceContent .invoice-remaining-line { color: var(--warning); font-weight: 700; }
+    #invoiceContent .invoice-line {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      opacity: 1;
+    }
+    #invoiceContent .invoice-line span { color: #374151; }
+    #invoiceContent .invoice-total {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 2px solid var(--pharmacy-green);
+      display: flex;
+      justify-content: space-between;
+      font-size: 20px;
+      font-weight: 900;
+      color: #065f46;
+      letter-spacing: -0.02em;
+      opacity: 1;
+    }
+    #invoiceContent .invoice-total span { color: #065f46; }
+    #invoiceContent .invoice-discount-line,
+    #invoiceContent .invoice-discount-line span { color: #dc2626; font-weight: 700; }
+    #invoiceContent .invoice-change-line,
+    #invoiceContent .invoice-change-line span { color: #065f46; font-weight: 700; }
+    #invoiceContent .invoice-remaining-line,
+    #invoiceContent .invoice-remaining-line span { color: #b45309; font-weight: 700; }
     #invoiceContent .invoice-thanks {
       text-align: center;
       margin-top: 16px;
       padding-top: 12px;
-      border-top: 1px dashed var(--border-strong);
+      border-top: 1px dashed rgba(15, 23, 42, 0.18);
       font-size: 12px;
-      color: var(--text-light);
+      color: #4b5563;
       font-weight: 500;
+      opacity: 1;
     }
+    /* Ensure dark mode does NOT override invoice text colors */
+    [data-theme="dark"] #invoiceContent,
+    [data-theme="dark"] #invoiceContent * {
+      color: inherit;
+    }
+    [data-theme="dark"] #invoiceContent { background: #ffffff; color: #1f2937; }
+    [data-theme="dark"] #invoiceContent h4 { color: #0f172a; }
+    [data-theme="dark"] #invoiceContent .invoice-subtitle { color: #6b7280; }
+    [data-theme="dark"] #invoiceContent .invoice-meta,
+    [data-theme="dark"] #invoiceContent .invoice-meta span { color: #374151; }
+    [data-theme="dark"] #invoiceContent .invoice-pay-method { color: #374151; }
+    [data-theme="dark"] #invoiceContent .invoice-pay-method strong { color: #065f46; }
+    [data-theme="dark"] #invoiceContent .invoice-items-table th { color: #1f2937; }
+    [data-theme="dark"] #invoiceContent .invoice-items-table td { color: #1f2937; }
+    [data-theme="dark"] #invoiceContent .invoice-line,
+    [data-theme="dark"] #invoiceContent .invoice-line span { color: #374151; }
+    [data-theme="dark"] #invoiceContent .invoice-total,
+    [data-theme="dark"] #invoiceContent .invoice-total span { color: #065f46; }
+    [data-theme="dark"] #invoiceContent .invoice-thanks { color: #4b5563; }
+    [data-theme="dark"] #invoiceContent .invoice-discount-line,
+    [data-theme="dark"] #invoiceContent .invoice-discount-line span { color: #dc2626; }
+    [data-theme="dark"] #invoiceContent .invoice-change-line,
+    [data-theme="dark"] #invoiceContent .invoice-change-line span { color: #065f46; }
+    [data-theme="dark"] #invoiceContent .invoice-remaining-line,
+    [data-theme="dark"] #invoiceContent .invoice-remaining-line span { color: #b45309; }
     .toast-container {
       position: fixed;
       top: 28px;
@@ -2482,7 +2545,8 @@
     /* Performance: contain layout for large lists */
     .pos-product-grid, .cart-list, .timeline-items, #medicationsBody, #invoicesBody { contain: layout; }
 
-    /* Prevent body scroll when any modal is open (CSS-only) */
+    /* Prevent page scroll when any modal is open (CSS-only) */
+    html:has(.modal-overlay.active),
     body:has(.modal-overlay.active) { overflow: hidden; }
 
     /* ═════════════════════ DOCK (Quick Actions Floating Bar) ═════════════════════ */
@@ -2650,27 +2714,8 @@
     @media (max-width: 420px) {
       .dock-outer { display: none; }
     }
-    /* Hide dock during print */
-    @media print { .dock-outer { display: none !important; } }
     /* Hide when modal open to avoid overlap */
     body:has(.modal-overlay.active) .dock-outer { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(20px); }
-
-    /* Print improvements (final) */
-    @media print {
-      .sidebar, .toast-container, .success-overlay,
-      .modal-actions, .modal-header .close-btn,
-      .bg-decoration, .page-header button { display: none !important; }
-      .modal-overlay { background: white !important; backdrop-filter: none !important; padding: 0 !important; }
-      .modal.invoice-modal {
-        max-width: 100% !important;
-        max-height: none !important;
-        box-shadow: none !important;
-        border: none !important;
-        padding: 0 !important;
-        animation: none !important;
-        background: white !important;
-      }
-    }
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.25); border-radius: 999px; }
@@ -3842,46 +3887,185 @@
       .details-actions { flex-wrap: wrap; }
     }
 
+    /* ═════════════════════ PRINT — Bulletproof Invoice Receipt ═════════════════════ */
     @media print {
-      @page { margin: 8mm; }
+      @page {
+        size: A4;
+        margin: 12mm;
+      }
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        animation: none !important;
+        transition: none !important;
+        text-shadow: none !important;
+      }
       html, body {
-        background: white !important;
-        color: #000 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
         direction: rtl;
       }
-      body * { visibility: hidden; }
-      .sidebar, .toast-container, .success-overlay, .modal-actions, .modal-header { display: none !important; }
-      #invoiceContent, #invoiceContent * { visibility: visible; }
-      #invoiceContent {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
-        max-width: 380px;
-        margin: 0 auto;
-        padding: 16px !important;
+      html:has(.modal-overlay.active),
+      body:has(.modal-overlay.active) { overflow: visible !important; }
+      body::before, body::after { display: none !important; }
+      /* Hide everything EXCEPT the invoice modal chain */
+      body > *:not(#invoiceModal),
+      .sidebar, .dock-outer, .toast-container, .success-overlay,
+      .bg-decoration, .content,
+      .modal-overlay:not(#invoiceModal) {
+        display: none !important;
+        visibility: hidden !important;
+      }
+      /* Show invoice modal as plain printable document */
+      #invoiceModal,
+      #invoiceModal.modal-overlay {
+        position: static !important;
+        display: block !important;
+        background: #ffffff !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        inset: auto !important;
+        z-index: auto !important;
+        overflow: visible !important;
+        animation: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+      #invoiceModal .modal,
+      #invoiceModal .modal.invoice-modal {
+        position: static !important;
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
         border: none !important;
-        background: white !important;
+        border-radius: 0 !important;
         box-shadow: none !important;
-        font-size: 12px;
-        color: #000;
+        background: #ffffff !important;
+        backdrop-filter: none !important;
+        animation: none !important;
+        transform: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
       }
-      #invoiceContent h4 { font-size: 18px !important; }
-      #invoiceContent .invoice-subtitle,
-      #invoiceContent .invoice-meta,
-      #invoiceContent .invoice-pay-method,
-      #invoiceContent .invoice-items-table th,
-      #invoiceContent .invoice-line,
-      #invoiceContent .invoice-total,
-      #invoiceContent .invoice-thanks { color: #000 !important; }
+      /* Hide modal chrome (header X, action buttons) */
+      #invoiceModal .modal-header,
+      #invoiceModal .modal-actions,
+      #invoiceModal .close-btn,
+      #invoiceModal #closeInvoiceBtn,
+      #invoiceModal #closeInvoiceModal,
+      #invoiceModal #printInvoiceBtn { display: none !important; }
+      /* Invoice content fills the page */
+      #invoiceContent {
+        position: static !important;
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        font-size: 13px !important;
+        page-break-inside: avoid;
+      }
+      #invoiceContent * {
+        background: transparent !important;
+        box-shadow: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+      /* Typography — clean black readable text */
+      #invoiceContent h4 {
+        color: #000000 !important;
+        font-size: 22px !important;
+        font-weight: 900 !important;
+        margin-bottom: 4px !important;
+      }
+      #invoiceContent .invoice-subtitle { color: #333333 !important; font-size: 13px !important; }
+      #invoiceContent .invoice-meta {
+        color: #111111 !important;
+        border-bottom: 1px solid #555 !important;
+        font-size: 12px !important;
+      }
+      #invoiceContent .invoice-meta span { color: #111111 !important; }
+      #invoiceContent .invoice-pay-method {
+        color: #111111 !important;
+        border-bottom: 1px solid #555 !important;
+        font-size: 13px !important;
+      }
+      #invoiceContent .invoice-pay-method strong { color: #047857 !important; }
+      #invoiceContent .invoice-items-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        page-break-inside: auto;
+      }
       #invoiceContent .invoice-items-table th {
-        background: #f3f4f6 !important;
+        background: #ebf5ee !important;
+        color: #000000 !important;
+        font-weight: 700 !important;
+        border-bottom: 1px solid #333 !important;
+        padding: 8px 10px !important;
       }
+      #invoiceContent .invoice-items-table td {
+        color: #000000 !important;
+        border-bottom: 1px dashed #aaa !important;
+        padding: 8px 10px !important;
+        font-size: 12.5px !important;
+      }
+      #invoiceContent .invoice-items-table tr { page-break-inside: avoid; }
+      #invoiceContent .invoice-line,
+      #invoiceContent .invoice-line span { color: #111111 !important; }
       #invoiceContent .invoice-total {
-        border-top: 1.5px solid #000 !important;
-        color: #000 !important;
+        border-top: 2px solid #000 !important;
+        color: #047857 !important;
+        font-size: 18px !important;
+        font-weight: 900 !important;
+        padding-top: 10px !important;
+        margin-top: 10px !important;
       }
+      #invoiceContent .invoice-total span { color: #047857 !important; }
+      #invoiceContent .invoice-discount-line,
+      #invoiceContent .invoice-discount-line span { color: #b91c1c !important; }
+      #invoiceContent .invoice-change-line,
+      #invoiceContent .invoice-change-line span { color: #047857 !important; }
+      #invoiceContent .invoice-remaining-line,
+      #invoiceContent .invoice-remaining-line span { color: #92400e !important; }
+      #invoiceContent .invoice-thanks {
+        color: #333333 !important;
+        border-top: 1px dashed #aaa !important;
+        font-size: 11px !important;
+        margin-top: 14px !important;
+      }
+      /* Refunded banner (if printing a refunded invoice) */
+      #invoiceContent .refunded-banner {
+        background: #fef3c7 !important;
+        border: 1px solid #b45309 !important;
+        color: #92400e !important;
+        padding: 10px 14px !important;
+        margin-bottom: 14px !important;
+        border-radius: 6px !important;
+      }
+      #invoiceContent .refunded-banner * { color: #92400e !important; }
+      #invoiceContent .refunded-banner-icon { background: #fde68a !important; }
     }
 
     /* ═════════════════════ DARK MODE ═════════════════════ */
@@ -5304,40 +5488,6 @@
     </div>
   </div>
 
-  <!-- Dock (Quick Actions Floating Bar) -->
-  <div class="dock-outer" id="dockOuter" aria-label="شريط الوصول السريع">
-    <div class="dock-panel" id="dockPanel" role="toolbar" aria-label="إجراءات سريعة">
-      <button class="dock-item" data-page="dashboard" type="button" aria-label="لوحة التحكم">
-        <span class="dock-icon">📊</span>
-        <span class="dock-label">لوحة التحكم</span>
-      </button>
-      <button class="dock-item" data-page="medications" type="button" aria-label="الأدوية">
-        <span class="dock-icon">💊</span>
-        <span class="dock-label">الأدوية</span>
-      </button>
-      <button class="dock-item" data-page="sales" type="button" aria-label="نقاط البيع">
-        <span class="dock-icon">🛒</span>
-        <span class="dock-label">نقاط البيع</span>
-      </button>
-      <button class="dock-item" data-page="alerts" type="button" aria-label="التنبيهات">
-        <span class="dock-icon">🔔</span>
-        <span class="dock-label">التنبيهات</span>
-      </button>
-      <button class="dock-item" data-page="invoices" type="button" aria-label="الفواتير">
-        <span class="dock-icon">🧾</span>
-        <span class="dock-label">الفواتير</span>
-      </button>
-      <button class="dock-item" data-page="reports" type="button" aria-label="التقارير">
-        <span class="dock-icon">📈</span>
-        <span class="dock-label">التقارير</span>
-      </button>
-      <button class="dock-item" data-page="activity" type="button" aria-label="سجل النشاط">
-        <span class="dock-icon">📋</span>
-        <span class="dock-label">سجل النشاط</span>
-      </button>
-    </div>
-  </div>
-
   <!-- إشعارات Toast -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -6422,7 +6572,44 @@
 
     $('closeInvoiceModal').addEventListener('click', () => $('invoiceModal').classList.remove('active'));
     $('closeInvoiceBtn').addEventListener('click', () => $('invoiceModal').classList.remove('active'));
-    $('printInvoiceBtn').addEventListener('click', () => window.print());
+    $('printInvoiceBtn').addEventListener('click', () => {
+      // Robust print: ensure invoice is fully rendered before printing.
+      // Cloning approach as JS safety net — works even if CSS print rules fail.
+      const original = document.getElementById('invoiceContent');
+      if (!original) return;
+      // Remove any prior print container
+      const prev = document.getElementById('printInvoiceContainer');
+      if (prev) prev.remove();
+      // Create a dedicated print container outside modal
+      const container = document.createElement('div');
+      container.id = 'printInvoiceContainer';
+      container.innerHTML = original.outerHTML;
+      // Inline styles to ensure visibility regardless of theme
+      container.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#fff;padding:14mm;color:#000;display:none;direction:rtl;font-family:Cairo,Tajawal,Inter,sans-serif;';
+      document.body.appendChild(container);
+      document.body.classList.add('is-printing');
+      // Show container ONLY during print
+      const printStyle = document.createElement('style');
+      printStyle.id = 'printDynamicStyle';
+      printStyle.textContent = `
+        @media print {
+          body.is-printing > *:not(#printInvoiceContainer) { display: none !important; }
+          body.is-printing #printInvoiceContainer { display: block !important; position: static !important; padding: 0 !important; }
+          body.is-printing #printInvoiceContainer #invoiceContent { background:#fff !important; color:#000 !important; border:none !important; box-shadow:none !important; padding:0 !important; opacity:1 !important; }
+        }
+      `;
+      document.head.appendChild(printStyle);
+      // Print after slight delay (let DOM settle)
+      setTimeout(() => {
+        window.print();
+        // Cleanup after the print dialog closes
+        setTimeout(() => {
+          container.remove();
+          printStyle.remove();
+          document.body.classList.remove('is-printing');
+        }, 800);
+      }, 80);
+    });
 
     function renderAlerts() {
       const expiring = medications.filter(m => { const d = daysUntil(m.expiry); return d >= 0 && d <= 30; })
@@ -7199,75 +7386,6 @@
         else if ($('invoiceModal').classList.contains('active')) $('invoiceModal').classList.remove('active');
       }
     });
-
-    // ============== Dock (Magnification + Navigation) ==============
-    (function initDock() {
-      const panel = $('dockPanel');
-      const items = Array.from(panel.querySelectorAll('.dock-item'));
-      const BASE_SIZE = 52;
-      const MAGNIFY = 72;
-      const DISTANCE = 140;
-      let raf = null;
-
-      // Navigate via dock + sync active state with main nav
-      items.forEach(item => {
-        item.addEventListener('click', () => {
-          const targetPage = item.dataset.page;
-          const navBtn = document.querySelector(`.nav-btn[data-page="${targetPage}"]`);
-          if (navBtn) navBtn.click();
-        });
-      });
-
-      function syncActive() {
-        const activeNav = document.querySelector('.nav-btn.active');
-        const activePage = activeNav ? activeNav.dataset.page : 'dashboard';
-        items.forEach(it => {
-          it.classList.toggle('active', it.dataset.page === activePage);
-        });
-      }
-      // Sync immediately + observe nav button changes
-      syncActive();
-      const navObserver = new MutationObserver(syncActive);
-      document.querySelectorAll('.nav-btn').forEach(b => {
-        navObserver.observe(b, { attributes: true, attributeFilter: ['class'] });
-      });
-
-      function applyMagnification(mouseX) {
-        items.forEach(item => {
-          const rect = item.getBoundingClientRect();
-          const itemCenter = rect.left + rect.width / 2;
-          const dist = Math.abs(mouseX - itemCenter);
-          let size = BASE_SIZE;
-          if (dist < DISTANCE) {
-            const ratio = 1 - dist / DISTANCE;
-            // Smooth curve (ease-out) for natural magnification
-            const eased = 1 - Math.pow(1 - ratio, 3);
-            size = BASE_SIZE + (MAGNIFY - BASE_SIZE) * eased;
-          }
-          item.style.width = size + 'px';
-          item.style.height = size + 'px';
-        });
-      }
-
-      panel.addEventListener('mousemove', (e) => {
-        if (raf) cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(() => applyMagnification(e.clientX));
-      });
-
-      panel.addEventListener('mouseleave', () => {
-        if (raf) cancelAnimationFrame(raf);
-        items.forEach(item => {
-          item.style.width = BASE_SIZE + 'px';
-          item.style.height = BASE_SIZE + 'px';
-        });
-      });
-
-      // Initialize sizes
-      items.forEach(item => {
-        item.style.width = BASE_SIZE + 'px';
-        item.style.height = BASE_SIZE + 'px';
-      });
-    })();
 
     checkExpiryAlerts();
     renderDashboard();
