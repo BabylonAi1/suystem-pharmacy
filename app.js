@@ -14,8 +14,14 @@ let currentSearch = '';
 // ============== دوال الاتصال بـ API ==============
 async function api(path, options = {}) {
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
-      headers: { 'Content-Type': 'application/json' },
+    // منع الكاش بإضافة timestamp للطلبات GET
+    const isGet = !options.method || options.method === 'GET';
+    const sep = path.includes('?') ? '&' : '?';
+    const url = `${API_BASE}${path}${isGet ? `${sep}_t=${Date.now()}` : ''}`;
+
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
       ...options,
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
@@ -29,6 +35,49 @@ async function api(path, options = {}) {
     toast('خطأ في الاتصال بالخادم', 'error');
     throw e;
   }
+}
+
+// ============== التحديث التلقائي (Polling كل 8 ثواني) ==============
+let autoRefreshTimer = null;
+let lastDataHash = '';
+
+function getCurrentPage() {
+  const active = document.querySelector('.page.active');
+  return active ? active.id : null;
+}
+
+function dataHash() {
+  return JSON.stringify({
+    m: medications.map(x => [x.id, x.name, x.qty, x.price, x.expiry, x.barcode, x.company]),
+    i: invoices.map(x => [x.id, x.total, (x.items || []).length]),
+  });
+}
+
+async function autoRefresh() {
+  try {
+    const prevMeds = JSON.stringify(medications);
+    const prevInvs = JSON.stringify(invoices);
+    await loadMedications();
+    await loadInvoices();
+    const newHash = dataHash();
+    if (newHash !== lastDataHash) {
+      lastDataHash = newHash;
+      const page = getCurrentPage();
+      if (page === 'dashboard') renderDashboard();
+      else if (page === 'medications') renderMedications();
+      else if (page === 'sales') renderSalesPage();
+      else if (page === 'alerts') renderAlerts();
+      else if (page === 'reports') renderReports();
+      else if (page === 'invoices') renderInvoices();
+    }
+  } catch (e) {
+    // تجاهل الخطأ في التحديث التلقائي
+  }
+}
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(autoRefresh, 8000);
 }
 
 async function loadMedications() {
@@ -567,5 +616,15 @@ window.viewInvoice = (id) => {
 (async function init() {
   await loadMedications();
   await loadInvoices();
+  lastDataHash = dataHash();
   renderDashboard();
+  startAutoRefresh();
+
+  // عند العودة للتاب من تاب ثاني، حدّث فوراً
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) autoRefresh();
+  });
+
+  // عند الرجوع للنافذة (focus)، حدّث فوراً
+  window.addEventListener('focus', autoRefresh);
 })();
