@@ -37,48 +37,8 @@ async function api(path, options = {}) {
   }
 }
 
-// ============== التحديث التلقائي (Polling كل 8 ثواني) ==============
-let autoRefreshTimer = null;
-let lastDataHash = '';
-
-function getCurrentPage() {
-  const active = document.querySelector('.page.active');
-  return active ? active.id : null;
-}
-
-function dataHash() {
-  return JSON.stringify({
-    m: medications.map(x => [x.id, x.name, x.qty, x.price, x.expiry, x.barcode, x.company]),
-    i: invoices.map(x => [x.id, x.total, (x.items || []).length]),
-  });
-}
-
-async function autoRefresh() {
-  try {
-    const prevMeds = JSON.stringify(medications);
-    const prevInvs = JSON.stringify(invoices);
-    await loadMedications();
-    await loadInvoices();
-    const newHash = dataHash();
-    if (newHash !== lastDataHash) {
-      lastDataHash = newHash;
-      const page = getCurrentPage();
-      if (page === 'dashboard') renderDashboard();
-      else if (page === 'medications') renderMedications();
-      else if (page === 'sales') renderSalesPage();
-      else if (page === 'alerts') renderAlerts();
-      else if (page === 'reports') renderReports();
-      else if (page === 'invoices') renderInvoices();
-    }
-  } catch (e) {
-    // تجاهل الخطأ في التحديث التلقائي
-  }
-}
-
-function startAutoRefresh() {
-  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-  autoRefreshTimer = setInterval(autoRefresh, 8000);
-}
+// (تم إزالة التحديث التلقائي بناءً على طلب المستخدم)
+// البيانات تُحدّث عند: فتح الصفحة + التنقل بين الصفحات + بعد إضافة/تعديل/حذف
 
 async function loadMedications() {
   try {
@@ -622,15 +582,5 @@ window.viewInvoice = (id) => {
 (async function init() {
   await loadMedications();
   await loadInvoices();
-  lastDataHash = dataHash();
   renderDashboard();
-  startAutoRefresh();
-
-  // عند العودة للتاب من تاب ثاني، حدّث فوراً
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) autoRefresh();
-  });
-
-  // عند الرجوع للنافذة (focus)، حدّث فوراً
-  window.addEventListener('focus', autoRefresh);
 })();
