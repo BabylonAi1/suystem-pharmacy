@@ -4832,6 +4832,258 @@
     body.theme-transitioning *::after {
       transition: background 0.5s var(--ease-smooth), background-color 0.5s var(--ease-smooth), color 0.4s var(--ease-smooth), border-color 0.4s var(--ease-smooth), box-shadow 0.4s var(--ease-smooth), fill 0.4s var(--ease-smooth) !important;
     }
+
+    /* ═══════════════════════════════════════════════════════════════ */
+    /* MOBILE ONLY FIXES — Active only below 1024px. Desktop untouched */
+    /* ═══════════════════════════════════════════════════════════════ */
+
+    /* ───── Tablet + Mobile (≤1023px) — base mobile layout ───── */
+    @media (max-width: 1023px) {
+      html, body { overflow-x: hidden !important; }
+
+      /* Sidebar already hidden, just enforce */
+      .sidebar { display: none !important; }
+
+      /* Content: full width, comfortable padding, room for dock */
+      .content {
+        margin-right: 0 !important;
+        padding: 28px 20px 130px !important;
+      }
+
+      /* Page header */
+      .page-header {
+        margin-bottom: 22px !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        align-items: flex-start !important;
+      }
+      .page-header h2 { font-size: 28px !important; line-height: 1.2 !important; }
+      .page-header .subtitle { font-size: 13px !important; margin-top: 4px !important; }
+      .date-badge { font-size: 12px !important; padding: 8px 14px !important; }
+
+      /* Stats: clean 2-column grid */
+      .stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; margin-bottom: 24px !important; }
+      .invoice-stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+
+      /* Two-column layouts → stack vertically */
+      .dashboard-grid,
+      .sales-grid,
+      .alerts-grid,
+      .reports-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+
+      /* POS: vertical stack, cart fits content */
+      .pos-layout { grid-template-columns: 1fr !important; gap: 16px !important; }
+      .pos-cart {
+        position: relative !important;
+        top: 0 !important;
+        max-height: none !important;
+        min-height: auto !important;
+        overflow: visible !important;
+        padding: 22px !important;
+      }
+      .pos-products {
+        padding: 22px !important;
+        min-height: auto !important;
+        gap: 16px !important;
+      }
+      .pos-product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+        max-height: none !important;
+        gap: 12px !important;
+      }
+      .cart-list { max-height: clamp(220px, 50vh, 460px) !important; }
+
+      /* Modals: fit screen with comfortable margin */
+      .modal-overlay { padding: 14px !important; }
+      .modal {
+        max-width: calc(100vw - 28px) !important;
+        max-height: calc(100vh - 56px) !important;
+        padding: 22px !important;
+        border-radius: 20px !important;
+      }
+      .modal-lg, .modal-details, .confirm-modal {
+        max-width: calc(100vw - 28px) !important;
+      }
+      .modal-details { padding: 0 !important; }
+
+      /* Tables: scroll only within container, not the page */
+      .table-wrapper {
+        overflow-x: auto !important;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        max-height: none !important;
+        border-radius: 14px !important;
+      }
+      .table-wrapper table { min-width: 600px; }
+      th, td { padding: 12px 14px !important; font-size: 13px !important; white-space: nowrap; }
+
+      /* Action buttons in tables: wrap nicely */
+      .actions { flex-wrap: wrap !important; gap: 5px !important; }
+      .actions .btn-icon { padding: 7px 10px !important; font-size: 11.5px !important; }
+
+      /* Filter pills + toolbar */
+      .toolbar, .invoice-toolbar, .activity-controls {
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        padding: 16px !important;
+      }
+      .filter-pills { gap: 6px !important; flex-wrap: wrap !important; }
+      .pill { padding: 7px 12px !important; font-size: 12px !important; }
+      .search-box { flex: 1 1 100% !important; min-width: 0 !important; max-width: none !important; }
+      .filter-group { flex: 1 1 100% !important; }
+
+      /* Forms: stack rows */
+      .form-row { flex-direction: column !important; gap: 0 !important; }
+      input, select, textarea { font-size: 16px !important; }  /* no iOS zoom */
+
+      /* Floating theme toggle: smaller, edge-safe */
+      .floating-theme-toggle {
+        width: 44px !important;
+        height: 44px !important;
+        top: 14px !important;
+        left: 14px !important;
+        font-size: 18px !important;
+      }
+
+      /* Dock: compact but readable */
+      .dock-outer { bottom: 16px !important; }
+      .dock-panel { gap: 8px !important; padding: 8px 12px !important; }
+      .dock-item { width: 46px !important; height: 46px !important; }
+      .dock-item .dock-icon { font-size: 18px !important; }
+      .dock-label { top: -32px !important; font-size: 11px !important; padding: 4px 9px !important; }
+
+      /* Toast container: spread across top */
+      .toast-container {
+        top: 14px !important;
+        left: 14px !important;
+        right: 14px !important;
+        max-width: none !important;
+      }
+      .toast { min-width: 0 !important; max-width: 100% !important; }
+
+      /* Details modal mobile layout */
+      .details-hero {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        padding: 22px 18px !important;
+      }
+      .details-image { width: 120px !important; height: 120px !important; }
+      .details-price-block { justify-content: center !important; }
+      .details-grid { grid-template-columns: 1fr 1fr !important; padding: 18px !important; gap: 10px !important; }
+      .details-section { padding: 8px 18px !important; }
+      .details-actions {
+        padding: 14px 18px 20px !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+      }
+      .details-actions .btn { flex: 1 1 calc(50% - 4px) !important; padding: 11px 14px !important; font-size: 13px !important; }
+
+      /* Activity timeline mobile */
+      .timeline { padding-right: 24px !important; }
+      .activity-card { padding: 14px 16px !important; gap: 12px !important; }
+      .activity-icon { width: 38px !important; height: 38px !important; font-size: 17px !important; }
+      .timeline-date-header { font-size: 11px !important; padding: 5px 12px 5px 14px !important; }
+
+      /* Empty states */
+      .empty-state-pro { padding: 50px 20px !important; min-height: 260px !important; }
+      .empty-state-pro .empty-icon-wrap { width: 64px !important; height: 64px !important; font-size: 28px !important; }
+    }
+
+    /* ───── Phones (≤768px) ───── */
+    @media (max-width: 768px) {
+      .content { padding: 22px 16px 120px !important; }
+
+      .page-header h2 { font-size: 24px !important; }
+      .page-header { gap: 10px !important; }
+
+      .stats-grid { gap: 12px !important; }
+      .stat-card { padding: 16px !important; gap: 12px !important; min-height: auto !important; }
+      .stat-icon { width: 44px !important; height: 44px !important; font-size: 19px !important; border-radius: 14px !important; }
+      .stat-info p { font-size: 11.5px !important; }
+      .stat-info h3 { font-size: 26px !important; }
+      .stat-trend { font-size: 10.5px !important; }
+
+      .invoice-stats-grid .stat-card { padding: 14px !important; }
+      .invoice-stats-grid .stat-icon { width: 38px !important; height: 38px !important; font-size: 16px !important; }
+      .invoice-stats-grid .stat-info h3 { font-size: 18px !important; }
+      .invoice-stats-grid .stat-info p { font-size: 10.5px !important; }
+      .invoice-stats-grid .stat-trend { display: none !important; }
+
+      .panel { padding: 18px !important; margin-bottom: 16px !important; }
+      .big-number { font-size: 30px !important; }
+
+      .pos-product-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; gap: 10px !important; }
+      .pos-product-card { padding: 12px !important; }
+      .pos-product-image { height: 76px !important; }
+
+      .modal { padding: 18px !important; border-radius: 18px !important; }
+
+      .dock-panel { gap: 6px !important; padding: 7px 11px !important; }
+      .dock-item { width: 42px !important; height: 42px !important; }
+    }
+
+    /* ───── Narrow phones (≤430px) — iPhone Pro Max, etc. ───── */
+    @media (max-width: 430px) {
+      .content { padding: 18px 12px 110px !important; }
+      .page-header h2 { font-size: 22px !important; }
+
+      /* Stats: still 2 columns but tighter */
+      .stats-grid, .invoice-stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+      }
+      .stat-card { padding: 14px !important; gap: 10px !important; }
+      .stat-icon { width: 40px !important; height: 40px !important; font-size: 17px !important; }
+      .stat-info h3 { font-size: 22px !important; }
+      .stat-info p { font-size: 10.5px !important; }
+
+      .invoice-stats-grid .stat-card { padding: 12px !important; }
+      .invoice-stats-grid .stat-info h3 { font-size: 16px !important; }
+
+      .panel { padding: 14px !important; }
+      .modal { padding: 16px !important; }
+      .modal-actions { flex-wrap: wrap !important; gap: 8px !important; }
+      .modal-actions .btn { flex: 1 1 calc(50% - 4px) !important; padding: 10px 12px !important; font-size: 13px !important; }
+
+      .dock-panel { gap: 4px !important; padding: 6px 10px !important; }
+      .dock-item { width: 40px !important; height: 40px !important; }
+      .dock-item .dock-icon { font-size: 17px !important; }
+
+      .floating-theme-toggle {
+        width: 40px !important;
+        height: 40px !important;
+        top: 12px !important;
+        left: 12px !important;
+      }
+    }
+
+    /* ───── Very narrow (≤360px) — small Android phones ───── */
+    @media (max-width: 360px) {
+      .content { padding: 14px 10px 100px !important; }
+      .page-header h2 { font-size: 20px !important; }
+      .stats-grid, .invoice-stats-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+      .stat-card { padding: 12px !important; gap: 8px !important; }
+      .stat-icon { width: 36px !important; height: 36px !important; font-size: 15px !important; }
+      .stat-info h3 { font-size: 20px !important; }
+      .stat-info p { font-size: 10px !important; }
+      .invoice-stats-grid .stat-info h3 { font-size: 15px !important; }
+      .dock-panel { gap: 3px !important; padding: 5px 8px !important; }
+      .dock-item { width: 36px !important; height: 36px !important; }
+      .pos-product-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important; }
+    }
+
+    /* ───── Tablet landscape clean-up (768-1023px) ───── */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .content { padding: 32px 24px 130px !important; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+      .invoice-stats-grid { grid-template-columns: repeat(3, 1fr) !important; }
+      .pos-product-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important; }
+      .page-header h2 { font-size: 30px !important; }
+    }
   </style>
 </head>
 <body>
