@@ -5606,5 +5606,122 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script src="app.js?v=5"></script>
+  <script>
+    // ============== UI Enhancements: Dock + Floating Theme Toggle + Badge Sync ==============
+    (function () {
+      const $ = id => document.getElementById(id);
+
+      // ---------- 1) Theme Toggle (Floating Button) ----------
+      const root = document.documentElement;
+      function applyTheme(theme) {
+        if (theme === 'dark') root.setAttribute('data-theme', 'dark');
+        else root.removeAttribute('data-theme');
+      }
+      // Apply saved or system preference
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
+
+      function toggleTheme() {
+        const isDark = root.getAttribute('data-theme') === 'dark';
+        const nextTheme = isDark ? 'light' : 'dark';
+        document.body.classList.add('theme-transitioning');
+        applyTheme(nextTheme);
+        localStorage.setItem('theme', nextTheme);
+        setTimeout(() => document.body.classList.remove('theme-transitioning'), 550);
+      }
+      const floatingBtn = $('floatingThemeToggle');
+      if (floatingBtn) floatingBtn.addEventListener('click', toggleTheme);
+      // Hidden sidebar toggle still works (in case)
+      const sidebarToggle = $('themeToggle');
+      if (sidebarToggle) sidebarToggle.addEventListener('click', toggleTheme);
+
+      // ---------- 2) Dock: Magnification + Navigation ----------
+      const dockPanel = $('dockPanel');
+      if (dockPanel) {
+        const items = Array.from(dockPanel.querySelectorAll('.dock-item'));
+        const BASE_SIZE = 52;
+        const MAGNIFY = 72;
+        const DISTANCE = 140;
+        let raf = null;
+
+        // Click handler: navigate by triggering hidden nav-btn
+        items.forEach(item => {
+          item.addEventListener('click', (e) => {
+            const targetPage = item.dataset.page;
+            const navBtn = document.querySelector(`.nav-btn[data-page="${targetPage}"]`);
+            if (navBtn) {
+              navBtn.click();
+            } else {
+              // Fallback if nav-btn missing — switch pages directly
+              document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+              const targetPageEl = $(targetPage);
+              if (targetPageEl) targetPageEl.classList.add('active');
+            }
+          });
+        });
+
+        // Sync active state with nav-btn
+        function syncActive() {
+          const activeNav = document.querySelector('.nav-btn.active');
+          const activePage = activeNav ? activeNav.dataset.page : 'dashboard';
+          items.forEach(it => it.classList.toggle('active', it.dataset.page === activePage));
+        }
+        syncActive();
+        const navObserver = new MutationObserver(syncActive);
+        document.querySelectorAll('.nav-btn').forEach(b => {
+          navObserver.observe(b, { attributes: true, attributeFilter: ['class'] });
+        });
+
+        // Magnification on mousemove
+        function applyMagnification(mouseX) {
+          items.forEach(item => {
+            const rect = item.getBoundingClientRect();
+            const itemCenter = rect.left + rect.width / 2;
+            const dist = Math.abs(mouseX - itemCenter);
+            let size = BASE_SIZE;
+            if (dist < DISTANCE) {
+              const ratio = 1 - dist / DISTANCE;
+              const eased = 1 - Math.pow(1 - ratio, 3);
+              size = BASE_SIZE + (MAGNIFY - BASE_SIZE) * eased;
+            }
+            item.style.width = size + 'px';
+            item.style.height = size + 'px';
+          });
+        }
+        dockPanel.addEventListener('mousemove', (e) => {
+          if (raf) cancelAnimationFrame(raf);
+          raf = requestAnimationFrame(() => applyMagnification(e.clientX));
+        });
+        dockPanel.addEventListener('mouseleave', () => {
+          if (raf) cancelAnimationFrame(raf);
+          items.forEach(item => {
+            item.style.width = BASE_SIZE + 'px';
+            item.style.height = BASE_SIZE + 'px';
+          });
+        });
+        // Initialize sizes
+        items.forEach(item => {
+          item.style.width = BASE_SIZE + 'px';
+          item.style.height = BASE_SIZE + 'px';
+        });
+      }
+
+      // ---------- 3) Mirror #alertsBadge → #dockAlertsBadge ----------
+      const sourceBadge = $('alertsBadge');
+      const dockBadge = $('dockAlertsBadge');
+      function mirrorBadge() {
+        if (!sourceBadge || !dockBadge) return;
+        const v = sourceBadge.textContent || '0';
+        dockBadge.textContent = v;
+        dockBadge.dataset.empty = sourceBadge.dataset.empty || (Number(v) === 0 ? 'true' : 'false');
+      }
+      if (sourceBadge && dockBadge) {
+        mirrorBadge();
+        const badgeObserver = new MutationObserver(mirrorBadge);
+        badgeObserver.observe(sourceBadge, { childList: true, characterData: true, subtree: true, attributes: true });
+      }
+    })();
+  </script>
 </body>
 </html>
