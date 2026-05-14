@@ -1,30 +1,160 @@
-// ============== التخزين والبيانات ==============
+// ============== إعدادات API (Cloudflare Worker + D1) ==============
+// المصدر الوحيد للحقيقة (Single Source of Truth) = Cloudflare D1 عبر الـ Worker.
+// localStorage يُستخدم فقط كـ cache احتياطي للعرض السريع و وضع عدم الاتصال (offline).
+// ⚠️ استخدم نفس API_BASE في كل المشروع. لا تستخدم مصادر بيانات مختلفة محلياً وعلى GitHub Pages.
+const API_BASE = 'https://pharmacy-api.soogxter3.workers.dev';
+
+// ============== الحالة (Cache من الـ API) ==============
 const STORAGE = {
-  meds: 'pharmacy_medications',
-  invoices: 'pharmacy_invoices',
+  meds:          'pharmacy_medicines',     // cache احتياطي
+  invoices:      'pharmacy_invoices',      // cache احتياطي
+  migrationDone: 'pharmacy_migration_done',// علم: تمت ترقية localStorage القديم إلى D1
 };
 
-let medications = JSON.parse(localStorage.getItem(STORAGE.meds) || '[]');
-let invoices = JSON.parse(localStorage.getItem(STORAGE.invoices) || '[]');
+// ⚠️ لا نُحمّل من localStorage كحالة ابتدائية كي لا تطغى البيانات القديمة على D1.
+// نبدأ فارغين ثم نعبئ من API. localStorage يُحدَّث بعد أول استجابة ناجحة كـ cache.
+let medications = [];
+let invoices    = [];
 let cart = [];
 let editingMedId = null;
 let currentFilter = 'all';
 let currentSearch = '';
 
-// بيانات افتراضية للعرض الأول
-if (medications.length === 0) {
-  medications = [
-    { id: 1, name: 'باراسيتامول 500', company: 'فايزر', price: 25, qty: 120, expiry: '2027-06-15', barcode: '8901234567890' },
-    { id: 2, name: 'أموكسيسيلين 250', company: 'GSK', price: 45, qty: 8, expiry: '2026-06-01', barcode: '8901234567891' },
-    { id: 3, name: 'فيتامين سي 1000', company: 'باير', price: 60, qty: 200, expiry: '2026-12-20', barcode: '' },
-    { id: 4, name: 'أوميبرازول 20', company: 'سانوفي', price: 35, qty: 5, expiry: '2026-05-25', barcode: '8901234567893' },
-    { id: 5, name: 'ايبوبروفين 400', company: 'نوفارتس', price: 30, qty: 75, expiry: '2027-03-10', barcode: '' },
-  ];
-  saveMeds();
+function saveMeds()     { localStorage.setItem(STORAGE.meds,     JSON.stringify(medications)); }
+function saveInvoices() { localStorage.setItem(STORAGE.invoices, JSON.stringify(invoices)); }
+
+// ============== Helper: استدعاء API ==============
+async function apiCall(path, options = {}) {
+  const isGet = !options.method || options.method === 'GET';
+  const sep = path.includes('?') ? '&' : '?';
+  const url = `${API_BASE}${path}${isGet ? `${sep}_t=${Date.now()}` : ''}`;
+  const method = options.method || 'GET';
+  console.log(`[API] → ${method} ${url}`, options.body || '');
+  let res;
+  try {
+    res = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+      ...options,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch (netErr) {
+    console.error(`[API] ✗ NETWORK ERROR on ${method} ${path}:`, netErr);
+    throw new Error('تعذّر الاتصال بالخادم. تحقق من الإنترنت.');
+  }
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    console.error(`[API] ✗ HTTP ${res.status} on ${method} ${path}:`, errBody);
+    throw new Error(errBody.error || `HTTP ${res.status}`);
+  }
+  if (res.status === 204) { console.log(`[API] ← 204 ${method} ${path}`); return null; }
+  const data = await res.json();
+  console.log(`[API] ← ${res.status} ${method} ${path}`, Array.isArray(data) ? `(${data.length} rows)` : data);
+  return data;
 }
 
-function saveMeds() { localStorage.setItem(STORAGE.meds, JSON.stringify(medications)); }
-function saveInvoices() { localStorage.setItem(STORAGE.invoices, JSON.stringify(invoices)); }
+// ============== 🩺 دوال API للأدوية ==============
+async function getMedicines()              { const d = await apiCall('/api/medicines'); return Array.isArray(d) ? d : []; }
+async function addMedicine(medicine)        { return apiCall('/api/medicines', { method: 'POST', body: medicine }); }
+async function updateMedicine(id, medicine) { return apiCall(`/api/medicines/${encodeURIComponent(id)}`, { method: 'PUT', body: medicine }); }
+async function deleteMedicine(id)           { return apiCall(`/api/medicines/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
+
+// ============== 🧾 دوال API للفواتير ==============
+async function getInvoices()              { const d = await apiCall('/api/invoices'); return Array.isArray(d) ? d : []; }
+async function addInvoice(invoice)         { return apiCall('/api/invoices', { method: 'POST', body: invoice }); }
+async function updateInvoice(id, invoice)  { return apiCall(`/api/invoices/${id}`, { method: 'PUT', body: invoice }); }
+async function deleteInvoice(id)           { return apiCall(`/api/invoices/${id}`, { method: 'DELETE' }); }
+
+// ============== 📊 دالة الـ Dashboard ==============
+async function getDashboard() { return apiCall('/api/dashboard'); }
+
+// ============== مزامنة الـ cache من API ==============
+// مصدر الحقيقة = Cloudflare D1. localStorage يُستخدم فقط كـ fallback لو فشل الاتصال.
+async function refreshMedicines({ silent = false } = {}) {
+  try {
+    const fresh = await getMedicines();
+    medications = fresh;
+    saveMeds();
+    return true;
+  } catch (e) {
+    console.error('[REFRESH] medicines failed → using cache:', e);
+    const cached = JSON.parse(localStorage.getItem(STORAGE.meds) || '[]');
+    if (medications.length === 0 && cached.length) medications = cached;
+    if (!silent) toast('تعذّر الاتصال — يتم عرض النسخة المحفوظة محلياً', 'error');
+    return false;
+  }
+}
+
+async function refreshInvoices({ silent = false } = {}) {
+  try {
+    const fresh = await getInvoices();
+    invoices = fresh;
+    saveInvoices();
+    return true;
+  } catch (e) {
+    console.error('[REFRESH] invoices failed → using cache:', e);
+    const cached = JSON.parse(localStorage.getItem(STORAGE.invoices) || '[]');
+    if (invoices.length === 0 && cached.length) invoices = cached;
+    if (!silent) toast('تعذّر تحميل الفواتير — يتم عرض النسخة المحفوظة محلياً', 'error');
+    return false;
+  }
+}
+
+// Refresh كل البيانات في طلب واحد متوازي
+async function refreshAll({ silent = false } = {}) {
+  console.log('[REFRESH] refreshing medicines + invoices from D1...');
+  const [a, b] = await Promise.all([
+    refreshMedicines({ silent }),
+    refreshInvoices({ silent }),
+  ]);
+  return a && b;
+}
+
+// ============== 🚚 ترقية بيانات localStorage القديمة إلى D1 (مرة واحدة فقط) ==============
+async function migrateLocalStorageIfNeeded() {
+  if (localStorage.getItem(STORAGE.migrationDone) === 'true') return;
+  console.log('[MIGRATION] checking if local data needs to be migrated to D1...');
+
+  let migrated = 0;
+
+  // 1) الأدوية القديمة
+  try {
+    const oldMeds = JSON.parse(localStorage.getItem(STORAGE.meds) || '[]');
+    const remoteMeds = await getMedicines();
+    if (remoteMeds.length === 0 && oldMeds.length > 0) {
+      console.log(`[MIGRATION] migrating ${oldMeds.length} medicines from localStorage → D1`);
+      for (const m of oldMeds) {
+        try { await addMedicine({ ...m, id: undefined }); migrated++; }
+        catch (e) { console.warn('[MIGRATION] med failed:', m.name, e); }
+      }
+    }
+  } catch (e) { console.warn('[MIGRATION] medicines step skipped:', e); }
+
+  // 2) الفواتير القديمة
+  try {
+    const oldInvs = JSON.parse(localStorage.getItem(STORAGE.invoices) || '[]');
+    const remoteInvs = await getInvoices();
+    if (remoteInvs.length === 0 && oldInvs.length > 0) {
+      console.log(`[MIGRATION] migrating ${oldInvs.length} invoices from localStorage → D1`);
+      for (const inv of oldInvs) {
+        try {
+          await addInvoice({
+            id: inv.id,                 // نحافظ على رقم الفاتورة القديم
+            date: inv.date,
+            total: inv.total,
+            items: inv.items || [],
+            skipStock: true,            // لا نخصم المخزون لأنه مخصوم تاريخياً
+          });
+          migrated++;
+        } catch (e) { console.warn('[MIGRATION] invoice failed:', inv.id, e); }
+      }
+    }
+  } catch (e) { console.warn('[MIGRATION] invoices step skipped:', e); }
+
+  localStorage.setItem(STORAGE.migrationDone, 'true');
+  console.log(`[MIGRATION] done. Migrated ${migrated} records.`);
+  if (migrated > 0) toast(`تم رفع ${migrated} سجل قديم إلى قاعدة البيانات المشتركة`, 'success');
+}
 
 // ============== أدوات مساعدة ==============
 function $(id) { return document.getElementById(id); }
@@ -49,12 +179,14 @@ function toast(message, type = 'success') {
 
 // ============== التنقل بين الصفحات ==============
 document.querySelectorAll('.nav-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     const pageId = btn.dataset.page;
     $(pageId).classList.add('active');
+    // مزامنة كل البيانات من D1 عند كل تنقّل لرؤية تحديثات الأجهزة الأخرى
+    await refreshAll({ silent: true });
     if (pageId === 'dashboard') renderDashboard();
     if (pageId === 'medications') renderMedications();
     if (pageId === 'sales') renderSalesPage();
@@ -172,8 +304,8 @@ function renderMedications() {
         <td><span class="status-tag ${status.class}">${status.label}</span></td>
         <td>
           <div class="actions">
-            <button class="btn btn-ghost btn-icon" onclick="editMed(${m.id})">✏️ تعديل</button>
-            <button class="btn btn-danger btn-icon" onclick="deleteMed(${m.id})">🗑️</button>
+            <button class="btn btn-ghost btn-icon" onclick="editMed('${String(m.id).replace(/'/g, "\\'")}')">✏️ تعديل</button>
+            <button class="btn btn-danger btn-icon" onclick="deleteMed('${String(m.id).replace(/'/g, "\\'")}')">🗑️</button>
           </div>
         </td>
       </tr>
@@ -199,18 +331,23 @@ function closeMedModal() {
 }
 
 window.editMed = (id) => {
-  const med = medications.find(m => m.id === id);
+  const med = medications.find(m => String(m.id) === String(id));
   if (med) openMedModal(med);
 };
 
-window.deleteMed = (id) => {
-  const med = medications.find(m => m.id === id);
+window.deleteMed = async (id) => {
+  const med = medications.find(m => String(m.id) === String(id));
   if (!med) return;
-  if (confirm(`هل تريد بالتأكيد حذف "${med.name}"؟`)) {
-    medications = medications.filter(m => m.id !== id);
-    saveMeds();
+  if (!confirm(`هل تريد بالتأكيد حذف "${med.name}"؟`)) return;
+  try {
+    await deleteMedicine(id);
+    await refreshAll({ silent: true });
     renderMedications();
+    renderDashboard();
     toast('تم حذف الدواء بنجاح', 'success');
+  } catch (e) {
+    console.error('[DELETE MED] failed:', e);
+    toast('فشل حذف الدواء — تحقق من الاتصال', 'error');
   }
 };
 
@@ -218,7 +355,7 @@ $('openAddMedBtn').addEventListener('click', () => openMedModal());
 $('closeMedModal').addEventListener('click', closeMedModal);
 $('cancelMedBtn').addEventListener('click', closeMedModal);
 
-$('medForm').addEventListener('submit', (e) => {
+$('medForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const data = {
     name: $('medName').value.trim(),
@@ -229,19 +366,22 @@ $('medForm').addEventListener('submit', (e) => {
     barcode: $('medBarcode').value.trim(),
   };
 
-  if (editingMedId) {
-    const idx = medications.findIndex(m => m.id === editingMedId);
-    if (idx >= 0) medications[idx] = { ...medications[idx], ...data };
-    toast('تم تعديل الدواء بنجاح', 'success');
-  } else {
-    const newId = medications.length ? Math.max(...medications.map(m => m.id)) + 1 : 1;
-    medications.push({ id: newId, ...data });
-    toast('تم إضافة الدواء بنجاح', 'success');
+  try {
+    if (editingMedId) {
+      await updateMedicine(editingMedId, data);
+      toast('تم تعديل الدواء بنجاح', 'success');
+    } else {
+      await addMedicine(data);
+      toast('تم إضافة الدواء بنجاح', 'success');
+    }
+    await refreshAll({ silent: true });
+    closeMedModal();
+    renderMedications();
+    renderDashboard();
+  } catch (err) {
+    console.error('[SAVE MED] failed:', err);
+    toast('فشل حفظ الدواء — تحقق من الاتصال', 'error');
   }
-
-  saveMeds();
-  closeMedModal();
-  renderMedications();
 });
 
 $('searchMed').addEventListener('input', (e) => {
@@ -271,8 +411,8 @@ function renderSalesPage() {
 }
 
 function updateSaleTotal() {
-  const id = parseInt($('saleMedSelect').value);
-  const med = medications.find(m => m.id === id);
+  const id = $('saleMedSelect').value;
+  const med = medications.find(m => String(m.id) === String(id));
   const qty = parseInt($('saleQty').value) || 0;
   if (med) {
     $('saleUnitPrice').value = fmt(med.price) + ' ج.م';
@@ -287,15 +427,15 @@ $('saleMedSelect').addEventListener('change', updateSaleTotal);
 $('saleQty').addEventListener('input', updateSaleTotal);
 
 $('addToCartBtn').addEventListener('click', () => {
-  const id = parseInt($('saleMedSelect').value);
+  const id = $('saleMedSelect').value;
   const qty = parseInt($('saleQty').value);
-  const med = medications.find(m => m.id === id);
+  const med = medications.find(m => String(m.id) === String(id));
 
   if (!med) { toast('اختر دواء أولاً', 'error'); return; }
   if (!qty || qty <= 0) { toast('أدخل كمية صحيحة', 'error'); return; }
   if (qty > med.qty) { toast(`الكمية المتاحة: ${med.qty} فقط`, 'error'); return; }
 
-  const existing = cart.find(c => c.id === id);
+  const existing = cart.find(c => String(c.id) === String(id));
   if (existing) {
     if (existing.qty + qty > med.qty) {
       toast(`الكمية الإجمالية تتجاوز المخزون`, 'error');
@@ -341,30 +481,32 @@ window.removeFromCart = (i) => {
   renderCart();
 };
 
-$('finishInvoiceBtn').addEventListener('click', () => {
+$('finishInvoiceBtn').addEventListener('click', async () => {
   if (cart.length === 0) { toast('الفاتورة فارغة', 'error'); return; }
 
   const total = cart.reduce((s, i) => s + i.qty * i.price, 0);
-  const invoice = {
-    id: invoices.length ? Math.max(...invoices.map(i => i.id)) + 1 : 1001,
+  const payload = {
     date: new Date().toISOString(),
-    items: [...cart],
+    items: cart.map(it => ({ id: it.id, name: it.name, price: it.price, qty: it.qty })),
     total,
   };
-  invoices.push(invoice);
 
-  // خصم الكميات من المخزون
-  cart.forEach(item => {
-    const med = medications.find(m => m.id === item.id);
-    if (med) med.qty -= item.qty;
-  });
+  let created;
+  try {
+    // إنشاء الفاتورة في D1 — الـ Worker يخصم المخزون تلقائياً ويولّد رقم الفاتورة
+    created = await addInvoice(payload);
+  } catch (e) {
+    console.error('[INVOICE] create failed:', e);
+    toast('فشل إصدار الفاتورة: ' + (e.message || 'تحقق من الاتصال'), 'error');
+    return;
+  }
 
-  saveMeds();
-  saveInvoices();
-  showInvoice(invoice);
+  // إعادة جلب البيانات من D1 لتعكس الواقع الجديد
+  await refreshAll({ silent: true });
+  showInvoice(created);
   cart = [];
   renderSalesPage();
-  toast('تم إصدار الفاتورة بنجاح', 'success');
+  toast(`تم إصدار الفاتورة #${created.id} بنجاح`, 'success');
 });
 
 function showInvoice(inv) {
@@ -520,9 +662,30 @@ function renderInvoices() {
 }
 
 window.viewInvoice = (id) => {
-  const inv = invoices.find(i => i.id === id);
+  const inv = invoices.find(i => String(i.id) === String(id));
   if (inv) showInvoice(inv);
 };
 
 // ============== التشغيل الأول ==============
-renderDashboard();
+// 1) عرض فوري من cache (إن وُجد) كي لا تظهر الشاشة فارغة لحظات.
+// 2) ترقية بيانات localStorage القديمة إلى D1 (مرة واحدة فقط، إن لزم).
+// 3) جلب أحدث البيانات من D1 — هذا هو مصدر الحقيقة.
+(function showCacheImmediately() {
+  try {
+    const m = JSON.parse(localStorage.getItem(STORAGE.meds) || '[]');
+    const i = JSON.parse(localStorage.getItem(STORAGE.invoices) || '[]');
+    if (m.length) medications = m;
+    if (i.length) invoices    = i;
+  } catch (_) { /* ignore */ }
+  renderDashboard();
+})();
+
+(async () => {
+  console.log('[BOOT] API_BASE =', API_BASE);
+  try {
+    await migrateLocalStorageIfNeeded();
+  } catch (e) { console.warn('[BOOT] migration step failed:', e); }
+  const ok = await refreshAll({ silent: true });
+  console.log('[BOOT] initial refresh ok =', ok, '| medicines:', medications.length, '| invoices:', invoices.length);
+  renderDashboard();
+})();

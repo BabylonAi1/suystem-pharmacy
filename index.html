@@ -5606,31 +5606,162 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    const STORAGE = { meds: 'pharmacy_medications', invoices: 'pharmacy_invoices', activities: 'pharmacy_activities' };
-    let medications = JSON.parse(localStorage.getItem(STORAGE.meds) || '[]');
-    let invoices = JSON.parse(localStorage.getItem(STORAGE.invoices) || '[]');
-    let activities = JSON.parse(localStorage.getItem(STORAGE.activities) || '[]');
+    // ============== Cloudflare D1 + Worker = Single Source of Truth ==============
+    // localStorage يُستخدم فقط كـ cache احتياطي للوضع غير المتصل (offline).
+    // أي إضافة/تعديل/حذف يُكتب في D1 مباشرة عبر API_BASE.
+    const API_BASE = 'https://pharmacy-api.soogxter3.workers.dev';
+
+    const STORAGE = {
+      meds:          'pharmacy_medications',
+      invoices:      'pharmacy_invoices',
+      activities:    'pharmacy_activities',
+      migrationDone: 'pharmacy_migration_done',
+    };
+
+    // ⚠️ نبدأ فارغين كي لا تطغى بيانات localStorage القديمة على D1.
+    // ثم نملأ من cache مؤقتاً (للعرض السريع) ثم نستبدل بالبيانات من D1.
+    let medications = [];
+    let invoices    = [];
+    let activities  = [];
     let cart = [];
     let editingMedId = null;
     let currentFilter = 'all';
     let currentSearch = '';
+    let _pendingSyncMeds = null, _pendingSyncInvs = null;
 
-    if (medications.length === 0) {
-      medications = [
-        { id: 1, name: 'باراسيتامول 500', company: 'فايزر', price: 25, qty: 120, expiry: '2027-06-15', barcode: '8901234567890', description: 'مسكن للألم وخافض للحرارة. يُستخدم لعلاج الصداع وآلام الجسم والحمى.', addedDate: '2025-08-12T10:00:00Z' },
-        { id: 2, name: 'أموكسيسيلين 250', company: 'GSK', price: 45, qty: 8, expiry: '2026-06-01', barcode: '8901234567891', description: 'مضاد حيوي واسع المجال يُستخدم لعلاج العدوى البكتيرية في الجهاز التنفسي والمسالك البولية.', addedDate: '2025-09-20T14:30:00Z' },
-        { id: 3, name: 'فيتامين سي 1000', company: 'باير', price: 60, qty: 200, expiry: '2026-12-20', barcode: '', description: 'مكمل غذائي يدعم جهاز المناعة ويساعد في امتصاص الحديد.', addedDate: '2025-10-05T09:15:00Z' },
-        { id: 4, name: 'أوميبرازول 20', company: 'سانوفي', price: 35, qty: 5, expiry: '2026-05-25', barcode: '8901234567893', description: 'مثبط لمضخة البروتون يُستخدم لعلاج قرحة المعدة والارتجاع المريئي.', addedDate: '2026-01-18T11:45:00Z' },
-        { id: 5, name: 'ايبوبروفين 400', company: 'نوفارتس', price: 30, qty: 75, expiry: '2027-03-10', barcode: '', description: 'مضاد للالتهاب غير ستيرويدي. يخفف الآلام والالتهابات والحمى.', addedDate: '2026-02-22T16:20:00Z' },
-      ];
-      saveMeds();
+    // قراءة ابتدائية من الـ cache فقط (لتفادي شاشة فارغة لحظات قبل وصول API)
+    try {
+      medications = JSON.parse(localStorage.getItem(STORAGE.meds)     || '[]');
+      invoices    = JSON.parse(localStorage.getItem(STORAGE.invoices) || '[]');
+      activities  = JSON.parse(localStorage.getItem(STORAGE.activities)|| '[]');
+    } catch (_) { medications = []; invoices = []; activities = []; }
+
+    // ============== Helper: استدعاء API ==============
+    async function apiCall(path, options = {}) {
+      const isGet = !options.method || options.method === 'GET';
+      const sep = path.includes('?') ? '&' : '?';
+      const url = `${API_BASE}${path}${isGet ? `${sep}_t=${Date.now()}` : ''}`;
+      const method = options.method || 'GET';
+      console.log(`[API] → ${method} ${path}`);
+      let res;
+      try {
+        res = await fetch(url, {
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+          ...options,
+          body: options.body ? JSON.stringify(options.body) : undefined,
+        });
+      } catch (netErr) {
+        console.error(`[API] ✗ NETWORK ERROR on ${method} ${path}:`, netErr);
+        throw new Error('تعذّر الاتصال بالخادم');
+      }
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        console.error(`[API] ✗ HTTP ${res.status} on ${method} ${path}:`, errBody);
+        throw new Error(errBody.error || `HTTP ${res.status}`);
+      }
+      if (res.status === 204) return null;
+      const data = await res.json();
+      console.log(`[API] ← ${res.status} ${method} ${path}`, Array.isArray(data) ? `(${data.length} rows)` : '');
+      return data;
     }
 
-    function saveMeds() { localStorage.setItem(STORAGE.meds, JSON.stringify(medications)); }
-    function saveInvoices() { localStorage.setItem(STORAGE.invoices, JSON.stringify(invoices)); }
+    // ============== جلب البيانات من D1 (المصدر الرئيسي) ==============
+    // ملاحظة: D1 يعيد id كـ TEXT لكن الواجهة القديمة تستخدم أرقاماً ⇒ نُحوّل لأرقام إن أمكن.
+    function normalizeId(v) {
+      if (v === null || v === undefined) return v;
+      const s = String(v);
+      if (/^-?\d+$/.test(s)) return parseInt(s, 10);
+      return s;
+    }
+    function normalizeMed(m) {
+      return { ...m, id: normalizeId(m.id), addedDate: m.addedDate || m.created_at };
+    }
+    function normalizeInv(inv) {
+      const items = (inv.items || []).map(it => ({ ...it, id: normalizeId(it.id) }));
+      return { ...inv, id: normalizeId(inv.id), items };
+    }
+
+    async function refreshFromCloud({ silent = false, render = true } = {}) {
+      console.log('[REFRESH] pulling medicines + invoices from D1...');
+      try {
+        const [meds, invs] = await Promise.all([
+          apiCall('/api/medicines'),
+          apiCall('/api/invoices'),
+        ]);
+        medications = (Array.isArray(meds) ? meds : []).map(normalizeMed);
+        invoices    = (Array.isArray(invs) ? invs : []).map(normalizeInv);
+        // cache فقط (احتياطي offline)
+        localStorage.setItem(STORAGE.meds,     JSON.stringify(medications));
+        localStorage.setItem(STORAGE.invoices, JSON.stringify(invoices));
+        if (render) {
+          try { typeof renderDashboard === 'function' && renderDashboard(); } catch(_) {}
+          try { typeof renderMedications === 'function' && renderMedications(); } catch(_) {}
+          try { typeof renderInvoices === 'function' && renderInvoices(); } catch(_) {}
+        }
+        return true;
+      } catch (e) {
+        console.error('[REFRESH] failed → using cache:', e);
+        if (!silent) {
+          try { toast({ title:'تعذّر الاتصال', message:'يتم عرض النسخة المحفوظة محلياً', type:'warning' }); } catch(_) {}
+        }
+        return false;
+      }
+    }
+
+    // ============== مزامنة الحالة المحلية إلى D1 (Bulk PUT) ==============
+    // أي استدعاء لـ saveMeds()/saveInvoices() يحفظ في الـ cache فوراً
+    // ثم يُرسل المصفوفة الكاملة إلى D1 مع debouncing لتفادي تكرار الطلبات.
+    function _scheduleSync(kind) {
+      if (kind === 'meds') {
+        clearTimeout(_pendingSyncMeds);
+        _pendingSyncMeds = setTimeout(async () => {
+          try {
+            console.log(`[SYNC] pushing ${medications.length} medicines → D1`);
+            await apiCall('/api/sync/medicines', { method: 'PUT', body: medications });
+          } catch (e) { console.error('[SYNC] medicines failed:', e); }
+        }, 300);
+      } else if (kind === 'invs') {
+        clearTimeout(_pendingSyncInvs);
+        _pendingSyncInvs = setTimeout(async () => {
+          try {
+            console.log(`[SYNC] pushing ${invoices.length} invoices → D1`);
+            await apiCall('/api/sync/invoices', { method: 'PUT', body: invoices });
+          } catch (e) { console.error('[SYNC] invoices failed:', e); }
+        }, 300);
+      }
+    }
+
+    function saveMeds()     { localStorage.setItem(STORAGE.meds,     JSON.stringify(medications)); _scheduleSync('meds'); }
+    function saveInvoices() { localStorage.setItem(STORAGE.invoices, JSON.stringify(invoices));    _scheduleSync('invs'); }
     function saveActivities() {
       if (activities.length > 250) activities = activities.slice(-250);
       localStorage.setItem(STORAGE.activities, JSON.stringify(activities));
+    }
+
+    // ============== ترقية بيانات localStorage القديمة (مرة واحدة) ==============
+    async function migrateLocalStorageIfNeeded() {
+      if (localStorage.getItem(STORAGE.migrationDone) === 'true') return;
+      console.log('[MIGRATION] checking local data vs D1...');
+      try {
+        const [remoteMeds, remoteInvs] = await Promise.all([
+          apiCall('/api/medicines').catch(() => []),
+          apiCall('/api/invoices').catch(() => []),
+        ]);
+        const oldMeds = JSON.parse(localStorage.getItem(STORAGE.meds)     || '[]');
+        const oldInvs = JSON.parse(localStorage.getItem(STORAGE.invoices) || '[]');
+
+        // ادفع للسحابة فقط لو الـ D1 فارغة و عندنا بيانات محلية قديمة
+        if (remoteMeds.length === 0 && oldMeds.length > 0) {
+          console.log(`[MIGRATION] uploading ${oldMeds.length} medicines → D1`);
+          await apiCall('/api/sync/medicines', { method: 'PUT', body: oldMeds });
+        }
+        if (remoteInvs.length === 0 && oldInvs.length > 0) {
+          console.log(`[MIGRATION] uploading ${oldInvs.length} invoices → D1`);
+          await apiCall('/api/sync/invoices', { method: 'PUT', body: oldInvs });
+        }
+      } catch (e) { console.warn('[MIGRATION] skipped:', e); }
+      localStorage.setItem(STORAGE.migrationDone, 'true');
     }
     function logActivity(type, title, message, meta = {}) {
       activities.push({
@@ -7583,6 +7714,26 @@
 
     checkExpiryAlerts();
     renderDashboard();
+
+    // ============== Bootstrap: sync with Cloudflare D1 ==============
+    // 1) عرض فوري من الـ cache (انتهى الآن).
+    // 2) ترقية البيانات القديمة لو لزم (مرة واحدة).
+    // 3) جلب أحدث البيانات من D1 و إعادة الرسم.
+    // 4) مزامنة دورية كل 30 ثانية لتعكس تغييرات الأجهزة الأخرى.
+    (async () => {
+      console.log('[BOOT] API_BASE =', API_BASE);
+      try { await migrateLocalStorageIfNeeded(); }
+      catch (e) { console.warn('[BOOT] migration error:', e); }
+      await refreshFromCloud({ silent: true, render: true });
+      console.log('[BOOT] ready. meds:', medications.length, '| invoices:', invoices.length);
+    })();
+
+    // Refresh على فترات منتظمة + عند العودة للنافذة
+    setInterval(() => { refreshFromCloud({ silent: true, render: true }); }, 30000);
+    window.addEventListener('focus', () => { refreshFromCloud({ silent: true, render: true }); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') refreshFromCloud({ silent: true, render: true });
+    });
   </script>
 </body>
 </html>
