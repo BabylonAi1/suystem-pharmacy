@@ -5605,123 +5605,1984 @@
   <!-- إشعارات Toast -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="app.js?v=5"></script>
   <script>
-    // ============== UI Enhancements: Dock + Floating Theme Toggle + Badge Sync ==============
-    (function () {
-      const $ = id => document.getElementById(id);
+    const STORAGE = { meds: 'pharmacy_medications', invoices: 'pharmacy_invoices', activities: 'pharmacy_activities' };
+    let medications = JSON.parse(localStorage.getItem(STORAGE.meds) || '[]');
+    let invoices = JSON.parse(localStorage.getItem(STORAGE.invoices) || '[]');
+    let activities = JSON.parse(localStorage.getItem(STORAGE.activities) || '[]');
+    let cart = [];
+    let editingMedId = null;
+    let currentFilter = 'all';
+    let currentSearch = '';
 
-      // ---------- 1) Theme Toggle (Floating Button) ----------
-      const root = document.documentElement;
-      function applyTheme(theme) {
-        if (theme === 'dark') root.setAttribute('data-theme', 'dark');
-        else root.removeAttribute('data-theme');
+    if (medications.length === 0) {
+      medications = [
+        { id: 1, name: 'باراسيتامول 500', company: 'فايزر', price: 25, qty: 120, expiry: '2027-06-15', barcode: '8901234567890', description: 'مسكن للألم وخافض للحرارة. يُستخدم لعلاج الصداع وآلام الجسم والحمى.', addedDate: '2025-08-12T10:00:00Z' },
+        { id: 2, name: 'أموكسيسيلين 250', company: 'GSK', price: 45, qty: 8, expiry: '2026-06-01', barcode: '8901234567891', description: 'مضاد حيوي واسع المجال يُستخدم لعلاج العدوى البكتيرية في الجهاز التنفسي والمسالك البولية.', addedDate: '2025-09-20T14:30:00Z' },
+        { id: 3, name: 'فيتامين سي 1000', company: 'باير', price: 60, qty: 200, expiry: '2026-12-20', barcode: '', description: 'مكمل غذائي يدعم جهاز المناعة ويساعد في امتصاص الحديد.', addedDate: '2025-10-05T09:15:00Z' },
+        { id: 4, name: 'أوميبرازول 20', company: 'سانوفي', price: 35, qty: 5, expiry: '2026-05-25', barcode: '8901234567893', description: 'مثبط لمضخة البروتون يُستخدم لعلاج قرحة المعدة والارتجاع المريئي.', addedDate: '2026-01-18T11:45:00Z' },
+        { id: 5, name: 'ايبوبروفين 400', company: 'نوفارتس', price: 30, qty: 75, expiry: '2027-03-10', barcode: '', description: 'مضاد للالتهاب غير ستيرويدي. يخفف الآلام والالتهابات والحمى.', addedDate: '2026-02-22T16:20:00Z' },
+      ];
+      saveMeds();
+    }
+
+    function saveMeds() { localStorage.setItem(STORAGE.meds, JSON.stringify(medications)); }
+    function saveInvoices() { localStorage.setItem(STORAGE.invoices, JSON.stringify(invoices)); }
+    function saveActivities() {
+      if (activities.length > 250) activities = activities.slice(-250);
+      localStorage.setItem(STORAGE.activities, JSON.stringify(activities));
+    }
+    function logActivity(type, title, message, meta = {}) {
+      activities.push({
+        id: Date.now() + Math.random(),
+        type, title, message, meta,
+        date: new Date().toISOString(),
+      });
+      saveActivities();
+    }
+    function $(id) { return document.getElementById(id); }
+    function fmt(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+    function todayStr() { return new Date().toISOString().slice(0, 10); }
+    function daysUntil(date) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const target = new Date(date);
+      return Math.floor((target - today) / (1000 * 60 * 60 * 24));
+    }
+
+    // ============== Unified Formatting Helpers ==============
+    // Currency: Iraqi Dinar (د.ع) with western digits + thousand separators
+    function formatCurrencyIQD(value) {
+      const num = Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+      return `<bdi class="num">${num}</bdi> <bdi class="currency">د.ع</bdi>`;
+    }
+    // Plain currency string (no HTML) for places that set textContent
+    function formatCurrencyText(value) {
+      const num = Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+      return `${num} د.ع`;
+    }
+    // Date: 13 مايو 2026 — Arabic month, western digits (no bidi mess)
+    function formatDate(date) {
+      if (!date) return '—';
+      try {
+        return new Date(date).toLocaleDateString('ar-EG', {
+          day: 'numeric', month: 'long', year: 'numeric',
+          numberingSystem: 'latn',
+        });
+      } catch (e) {
+        return new Date(date).toLocaleDateString('en-GB');
       }
-      // Apply saved or system preference
-      const savedTheme = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
-
-      function toggleTheme() {
-        const isDark = root.getAttribute('data-theme') === 'dark';
-        const nextTheme = isDark ? 'light' : 'dark';
-        document.body.classList.add('theme-transitioning');
-        applyTheme(nextTheme);
-        localStorage.setItem('theme', nextTheme);
-        setTimeout(() => document.body.classList.remove('theme-transitioning'), 550);
+    }
+    // Short date: 13/05/2026
+    function formatDateShort(date) {
+      if (!date) return '—';
+      return new Date(date).toLocaleDateString('en-GB');
+    }
+    // Time: 14:32 (24h, western digits)
+    function formatTime(date) {
+      if (!date) return '';
+      try {
+        return new Date(date).toLocaleTimeString('ar-EG', {
+          hour: '2-digit', minute: '2-digit', hour12: false,
+          numberingSystem: 'latn',
+        });
+      } catch (e) {
+        return new Date(date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
       }
-      const floatingBtn = $('floatingThemeToggle');
-      if (floatingBtn) floatingBtn.addEventListener('click', toggleTheme);
-      // Hidden sidebar toggle still works (in case)
-      const sidebarToggle = $('themeToggle');
-      if (sidebarToggle) sidebarToggle.addEventListener('click', toggleTheme);
+    }
+    function formatDateTime(date) {
+      return `${formatDate(date)} · ${formatTime(date)}`;
+    }
+    // Invoice number wrapped in LTR bdi for clean RTL rendering
+    function formatInvoiceNumber(id) {
+      return `<bdi class="num">#${id}</bdi>`;
+    }
+    const TOAST_ICONS = { success: '✓', error: '✕', warning: '!', info: 'i' };
 
-      // ---------- 2) Dock: Magnification + Navigation ----------
-      const dockPanel = $('dockPanel');
-      if (dockPanel) {
-        const items = Array.from(dockPanel.querySelectorAll('.dock-item'));
-        const BASE_SIZE = 52;
-        const MAGNIFY = 72;
-        const DISTANCE = 140;
-        let raf = null;
+    function toast(messageOrOpts, type = 'success', duration = 3500) {
+      let title = '', message = '', toastType = type;
+      if (typeof messageOrOpts === 'string') {
+        message = messageOrOpts;
+      } else if (messageOrOpts && typeof messageOrOpts === 'object') {
+        title = messageOrOpts.title || '';
+        message = messageOrOpts.message || '';
+        toastType = messageOrOpts.type || type;
+        duration = messageOrOpts.duration || duration;
+      }
+      if (!TOAST_ICONS[toastType]) toastType = 'success';
 
-        // Click handler: navigate by triggering hidden nav-btn
+      const t = document.createElement('div');
+      t.className = `toast toast-${toastType}${title ? ' has-title' : ''}`;
+      t.style.setProperty('--toast-duration', `${duration}ms`);
+      t.innerHTML = `
+        <div class="toast-icon">${TOAST_ICONS[toastType]}</div>
+        <div class="toast-content">
+          ${title ? `<strong class="toast-title"></strong>` : ''}
+          <span class="toast-message"></span>
+        </div>
+        <button class="toast-close" aria-label="إغلاق">×</button>
+        <span class="toast-progress"></span>
+      `;
+      if (title) t.querySelector('.toast-title').textContent = title;
+      t.querySelector('.toast-message').textContent = message;
+
+      const container = $('toastContainer');
+      container.appendChild(t);
+
+      let timeoutId;
+      const close = () => {
+        if (t.classList.contains('toast-exit')) return;
+        clearTimeout(timeoutId);
+        t.classList.add('toast-exit');
+        setTimeout(() => t.remove(), 360);
+      };
+
+      t.querySelector('.toast-close').addEventListener('click', close);
+      timeoutId = setTimeout(close, duration);
+
+      const progressBar = t.querySelector('.toast-progress');
+      t.addEventListener('mouseenter', () => {
+        clearTimeout(timeoutId);
+        progressBar.style.animationPlayState = 'paused';
+      });
+      t.addEventListener('mouseleave', () => {
+        progressBar.style.animationPlayState = 'running';
+        timeoutId = setTimeout(close, 1800);
+      });
+
+      return t;
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const pageId = btn.dataset.page;
+        $(pageId).classList.add('active');
+        if (pageId === 'dashboard') renderDashboard();
+        if (pageId === 'medications') renderMedications();
+        if (pageId === 'sales') renderSalesPage();
+        if (pageId === 'alerts') renderAlerts();
+        if (pageId === 'reports') renderReports();
+        if (pageId === 'invoices') renderInvoices();
+        if (pageId === 'activity') renderActivityPage();
+      });
+    });
+
+    // ============== طي الشريط الجانبي ==============
+    const sidebar = $('sidebar');
+    const collapseBtn = $('collapseBtn');
+    if (localStorage.getItem('sidebar_collapsed') === '1') {
+      sidebar.classList.add('collapsed');
+      collapseBtn.setAttribute('title', 'توسيع القائمة');
+    }
+    collapseBtn.addEventListener('click', () => {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      localStorage.setItem('sidebar_collapsed', isCollapsed ? '1' : '0');
+      collapseBtn.setAttribute('title', isCollapsed ? 'توسيع القائمة' : 'طي القائمة');
+    });
+
+    // ============== تبديل المظهر (Light/Dark) ==============
+    const themeToggle = $('themeToggle');
+    const themeLabel = $('themeLabel');
+    const root = document.documentElement;
+
+    function applyTheme(theme) {
+      if (theme === 'dark') {
+        root.setAttribute('data-theme', 'dark');
+        themeLabel.textContent = 'الوضع الفاتح';
+        themeToggle.setAttribute('title', 'التبديل إلى الوضع الفاتح');
+      } else {
+        root.removeAttribute('data-theme');
+        themeLabel.textContent = 'الوضع الداكن';
+        themeToggle.setAttribute('title', 'التبديل إلى الوضع الداكن');
+      }
+    }
+
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
+
+    themeToggle.addEventListener('click', () => {
+      const isDark = root.getAttribute('data-theme') === 'dark';
+      const nextTheme = isDark ? 'light' : 'dark';
+      document.body.classList.add('theme-transitioning');
+      applyTheme(nextTheme);
+      localStorage.setItem('theme', nextTheme);
+      setTimeout(() => document.body.classList.remove('theme-transitioning'), 550);
+    });
+
+    // Floating theme toggle — delegates to the original toggle
+    const floatingThemeBtn = $('floatingThemeToggle');
+    if (floatingThemeBtn) {
+      floatingThemeBtn.addEventListener('click', () => themeToggle.click());
+    }
+
+    function renderDashboard() {
+      const today = todayStr();
+      const todaySales = invoices.filter(inv => inv.date.startsWith(today) && !isInvoiceRefunded(inv));
+      const dailyTotal = todaySales.reduce((sum, inv) => sum + inv.total, 0);
+      const expiringSoon = medications.filter(m => { const d = daysUntil(m.expiry); return d >= 0 && d <= 30; });
+
+      $('statMedicationsCount').textContent = fmt(medications.length);
+      $('statExpiringSoon').textContent = fmt(expiringSoon.length);
+      $('statDailySales').textContent = fmt(dailyTotal) + ' د.ع';
+      $('statInvoicesCount').textContent = fmt(invoices.length);
+      $('todayDate').textContent = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', numberingSystem: 'latn' });
+
+      const recentBox = $('recentSales');
+      const recent = invoices.slice(-5).reverse();
+      if (recent.length === 0) {
+        recentBox.innerHTML = `
+          <div class="empty-state-pro">
+            <div class="empty-icon-wrap">🧾</div>
+            <h4>لا توجد مبيعات بعد</h4>
+            <p>ستظهر هنا أحدث الفواتير المُصدرة من نقاط البيع</p>
+          </div>`;
+      } else {
+        recentBox.innerHTML = recent.map(inv => `
+          <div class="recent-item">
+            <div class="info">
+              <strong>فاتورة #${inv.id}</strong>
+              <span>${inv.items.length} منتجات · <bdi class="num">${formatDateTime(inv.date)}</bdi></span>
+            </div>
+            <div class="amount">${fmt(inv.total)} د.ع</div>
+          </div>
+        `).join('');
+      }
+
+      const alertsBox = $('dashboardAlerts');
+      const lowStock = medications.filter(m => m.qty > 0 && m.qty <= 10);
+      const allAlerts = [
+        ...expiringSoon.map(m => ({ med: m, type: 'warn', label: `ينتهي خلال ${daysUntil(m.expiry)} يوم` })),
+        ...lowStock.map(m => ({ med: m, type: 'danger', label: `الكمية المتاحة: ${m.qty}` })),
+      ].slice(0, 5);
+
+      if (allAlerts.length === 0) {
+        alertsBox.innerHTML = `
+          <div class="empty-state-pro">
+            <div class="empty-icon-wrap">✅</div>
+            <h4>كل شيء يعمل بسلاسة</h4>
+            <p>لا توجد تنبيهات تحتاج إلى انتباهك حالياً</p>
+          </div>`;
+      } else {
+        alertsBox.innerHTML = allAlerts.map(a => `
+          <div class="recent-item ${a.type}">
+            <div class="info">
+              <strong>${a.med.name}</strong>
+              <span>${a.med.company}</span>
+            </div>
+            <div class="amount">${a.label}</div>
+          </div>
+        `).join('');
+      }
+
+      const totalAlerts = expiringSoon.length + lowStock.length;
+      const badge = $('alertsBadge');
+      badge.textContent = totalAlerts;
+      badge.dataset.empty = totalAlerts === 0;
+      const dockBadge = $('dockAlertsBadge');
+      if (dockBadge) {
+        dockBadge.textContent = totalAlerts;
+        dockBadge.dataset.empty = totalAlerts === 0;
+      }
+    }
+
+    function getMedStatus(m) {
+      const days = daysUntil(m.expiry);
+      if (m.qty === 0) return { class: 'status-danger', label: 'نفد المخزون' };
+      if (days < 0) return { class: 'status-danger', label: 'منتهي' };
+      if (days <= 30) return { class: 'status-warn', label: 'قارب على الانتهاء' };
+      if (m.qty <= 10) return { class: 'status-warn', label: 'مخزون منخفض' };
+      return { class: 'status-ok', label: 'غير منتهي' };
+    }
+
+    function getQtyStatus(m) {
+      if (m.qty === 0) return { class: 'status-danger', label: 'منتهي' };
+      if (m.qty < 20) return { class: 'status-warn', label: 'قليل' };
+      return { class: 'status-ok', label: 'متوفر' };
+    }
+
+    function renderMedications() {
+      const search = currentSearch.toLowerCase();
+      let filtered = medications.filter(m => {
+        const matchSearch = !search || m.name.toLowerCase().includes(search) ||
+          m.company.toLowerCase().includes(search) || (m.barcode || '').includes(search);
+        return matchSearch;
+      });
+
+      if (currentFilter === 'low') filtered = filtered.filter(m => m.qty <= 10);
+      if (currentFilter === 'expiring') filtered = filtered.filter(m => { const d = daysUntil(m.expiry); return d >= 0 && d <= 30; });
+
+      const body = $('medicationsBody');
+      if (filtered.length === 0) {
+        body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-light)">لا توجد أدوية مطابقة</td></tr>';
+        return;
+      }
+
+      body.innerHTML = filtered.map(m => {
+        const status = getMedStatus(m);
+        const qtyStatus = getQtyStatus(m);
+        return `
+          <tr>
+            <td><strong class="med-name-link" onclick="openMedDetails(${m.id})" title="عرض التفاصيل">${m.name}</strong></td>
+            <td>${m.company}</td>
+            <td class="num"><span class="cell-money">${fmt(m.qty)} ملغ</span></td>
+            <td class="num"><bdi>${fmt(m.price)}</bdi></td>
+            <td><bdi class="num">${formatDate(m.expiry)}</bdi></td>
+            <td><bdi>${m.barcode || '—'}</bdi></td>
+            <td><span class="status-tag ${status.class}">${status.label}</span></td>
+            <td><span class="status-tag ${qtyStatus.class}">${qtyStatus.label}</span></td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-ghost btn-icon icon-only" onclick="editMed(${m.id})" title="تعديل" aria-label="تعديل">✏️</button>
+                <button class="btn btn-refill btn-icon icon-only" onclick="openRefillModal(${m.id})" title="إعادة ملء" aria-label="إعادة ملء">➕</button>
+                <button class="btn btn-danger btn-icon icon-only" onclick="deleteMed(${m.id})" title="حذف" aria-label="حذف">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    let currentImageData = null;
+
+    function openMedModal(med = null) {
+      editingMedId = med ? med.id : null;
+      $('medModalTitle').textContent = med ? '✏️ تعديل دواء' : '➕ إضافة دواء جديد';
+      $('medName').value = med ? med.name : '';
+      $('medCompany').value = med ? med.company : '';
+      $('medPrice').value = med ? med.price : '';
+      $('medQty').value = med ? med.qty : '';
+      $('medExpiry').value = med ? med.expiry : '';
+      $('medBarcode').value = med ? (med.barcode || '') : '';
+      $('medDescription').value = med ? (med.description || '') : '';
+      currentImageData = med && med.image ? med.image : null;
+      updateImagePreview();
+      document.querySelectorAll('#medForm .form-group').forEach(g => g.classList.remove('has-error'));
+      $('medModal').classList.add('active');
+      setTimeout(() => $('medName').focus(), 300);
+    }
+
+    function closeMedModal() {
+      $('medModal').classList.remove('active');
+      editingMedId = null;
+      currentImageData = null;
+      $('medImage').value = '';
+      updateImagePreview();
+    }
+
+    function updateImagePreview() {
+      const preview = $('imagePreview');
+      const zone = $('imageUploadZone');
+      const img = $('imagePreviewImg');
+      if (currentImageData) {
+        img.src = currentImageData;
+        preview.classList.add('active');
+        zone.style.display = 'none';
+      } else {
+        img.src = '';
+        preview.classList.remove('active');
+        zone.style.display = '';
+      }
+    }
+
+    function handleImageFile(file) {
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        toast('يجب اختيار ملف صورة فقط', 'error');
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        toast('حجم الصورة يجب أن يكون أقل من 2 ميجابايت', 'error');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxSize = 640;
+          let { width, height } = img;
+          if (width > height && width > maxSize) {
+            height = (height / width) * maxSize;
+            width = maxSize;
+          } else if (height > maxSize) {
+            width = (width / height) * maxSize;
+            height = maxSize;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          currentImageData = canvas.toDataURL('image/jpeg', 0.82);
+          updateImagePreview();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    $('medImage').addEventListener('change', (e) => handleImageFile(e.target.files[0]));
+    $('removeImageBtn').addEventListener('click', () => {
+      currentImageData = null;
+      $('medImage').value = '';
+      updateImagePreview();
+    });
+
+    const uploadZone = $('imageUploadZone');
+    ['dragenter', 'dragover'].forEach(evt => {
+      uploadZone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadZone.classList.add('dragging');
+      });
+    });
+    ['dragleave', 'drop'].forEach(evt => {
+      uploadZone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadZone.classList.remove('dragging');
+      });
+    });
+    uploadZone.addEventListener('drop', (e) => {
+      handleImageFile(e.dataTransfer.files[0]);
+    });
+
+    ['medName', 'medCompany', 'medPrice', 'medQty', 'medExpiry'].forEach(id => {
+      $(id).addEventListener('input', () => {
+        $(id).closest('.form-group').classList.remove('has-error');
+      });
+    });
+
+    window.editMed = (id) => {
+      const med = medications.find(m => m.id === id);
+      if (med) openMedModal(med);
+    };
+
+    window.deleteMed = (id) => {
+      const med = medications.find(m => m.id === id);
+      if (!med) return;
+      if (confirm(`هل تريد بالتأكيد حذف "${med.name}"؟`)) {
+        medications = medications.filter(m => m.id !== id);
+        saveMeds();
+        renderMedications();
+        logActivity('med_deleted', 'حذف دواء', `تم حذف "${med.name}" من المخزون`, { medName: med.name });
+        toast({ title: 'تم الحذف', message: `تم حذف "${med.name}" من المخزون`, type: 'warning' });
+      }
+    };
+
+    $('openAddMedBtn').addEventListener('click', () => openMedModal());
+    $('closeMedModal').addEventListener('click', closeMedModal);
+    $('cancelMedBtn').addEventListener('click', closeMedModal);
+
+    function setFieldError(id, hasError, message) {
+      const group = $(id).closest('.form-group');
+      const errEl = group.querySelector('.error-msg');
+      if (hasError) {
+        group.classList.add('has-error');
+        if (errEl && message) errEl.textContent = message;
+      } else {
+        group.classList.remove('has-error');
+      }
+      return !hasError;
+    }
+
+    $('medForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = $('medName').value.trim();
+      const company = $('medCompany').value.trim();
+      const priceRaw = $('medPrice').value;
+      const qtyRaw = $('medQty').value;
+      const expiry = $('medExpiry').value;
+      const price = parseFloat(priceRaw);
+      const qty = parseInt(qtyRaw);
+
+      let valid = true;
+      valid = setFieldError('medName', !name, 'يجب إدخال اسم الدواء') && valid;
+      valid = setFieldError('medCompany', !company, 'يجب إدخال اسم الشركة') && valid;
+      valid = setFieldError('medPrice', priceRaw === '' || isNaN(price) || price < 0, 'يجب إدخال سعر صحيح') && valid;
+      valid = setFieldError('medQty', qtyRaw === '' || isNaN(qty) || qty < 0, 'يجب إدخال كمية صحيحة') && valid;
+      valid = setFieldError('medExpiry', !expiry, 'يجب إدخال تاريخ الانتهاء') && valid;
+
+      if (!valid) {
+        toast({ title: 'خطأ في النموذج', message: 'يرجى تصحيح الحقول المميزة بالأحمر', type: 'error' });
+        const firstError = document.querySelector('#medForm .form-group.has-error input');
+        if (firstError) firstError.focus();
+        return;
+      }
+
+      const data = {
+        name, company, price, qty, expiry,
+        barcode: $('medBarcode').value.trim(),
+        description: $('medDescription').value.trim(),
+        image: currentImageData,
+      };
+
+      if (editingMedId) {
+        const idx = medications.findIndex(m => m.id === editingMedId);
+        if (idx >= 0) medications[idx] = { ...medications[idx], ...data };
+        logActivity('med_edited', 'تعديل دواء', `تم تعديل بيانات "${data.name}"`, { medName: data.name, medId: editingMedId });
+        toast({ title: 'تم التحديث', message: `تم حفظ تعديلات "${data.name}" بنجاح`, type: 'success' });
+      } else {
+        const newId = medications.length ? Math.max(...medications.map(m => m.id)) + 1 : 1;
+        medications.push({ id: newId, ...data, addedDate: new Date().toISOString() });
+        logActivity('med_added', 'إضافة دواء جديد', `تم إضافة "${data.name}" بسعر ${fmt(data.price)} د.ع · ${fmt(data.qty)} وحدة`, { medName: data.name, medId: newId });
+        toast({ title: 'تمت الإضافة', message: `تم إضافة "${data.name}" إلى المخزون`, type: 'success' });
+      }
+
+      saveMeds();
+      closeMedModal();
+      renderMedications();
+    });
+
+    $('searchMed').addEventListener('input', (e) => {
+      currentSearch = e.target.value;
+      renderMedications();
+    });
+
+    document.querySelectorAll('.pill').forEach(p => {
+      p.addEventListener('click', () => {
+        document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+        currentFilter = p.dataset.filter;
+        renderMedications();
+      });
+    });
+
+    let posSearchTerm = '';
+    let posDiscount = 0;
+    let posPaidAmount = 0;
+    let posPaymentMethod = 'cash';
+
+    function renderSalesPage() {
+      $('posSearch').value = '';
+      posSearchTerm = '';
+      posDiscount = 0;
+      posPaidAmount = 0;
+      posPaymentMethod = 'cash';
+      $('discountInput').value = '0';
+      $('paidAmountInput').value = '0';
+      document.querySelectorAll('.payment-method-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.method === 'cash');
+      });
+      renderPosProducts();
+      renderCart();
+    }
+
+    function renderPosProducts() {
+      const term = posSearchTerm.toLowerCase().trim();
+      const available = medications.filter(m => {
+        if (m.qty <= 0) return false;
+        if (!term) return true;
+        return m.name.toLowerCase().includes(term) ||
+               m.company.toLowerCase().includes(term) ||
+               (m.barcode || '').includes(term);
+      });
+
+      const hint = $('posSearchHint');
+      hint.textContent = term ? `${available.length} نتيجة` : '';
+
+      const grid = $('posProductGrid');
+      if (available.length === 0) {
+        grid.innerHTML = `
+          <div class="pos-empty-results">
+            <div class="empty-icon">${term ? '🔍' : '📦'}</div>
+            <p>${term ? 'لا توجد نتائج مطابقة' : 'لا توجد أدوية في المخزون'}</p>
+            <span>${term ? 'جرّب كلمات بحث مختلفة' : 'أضف أدوية من صفحة إدارة الأدوية'}</span>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = available.map(m => {
+        const days = daysUntil(m.expiry);
+        const isExpired = days < 0;
+        const nearExpiry = !isExpired && days <= 30;
+        const lowStock = m.qty > 0 && m.qty <= 10;
+        const disabled = isExpired;
+        const classes = [
+          'pos-product-card',
+          lowStock ? 'low-stock' : '',
+          disabled ? 'is-disabled' : '',
+          isExpired ? 'is-expired' : '',
+        ].filter(Boolean).join(' ');
+        const badge = isExpired
+          ? '<span class="expiry-badge expired">منتهي</span>'
+          : nearExpiry
+            ? `<span class="expiry-badge near"><bdi class="num">${days}</bdi> يوم</span>`
+            : '';
+        const clickHandler = disabled ? '' : `onclick="addToCart(${m.id})"`;
+        return `
+          <div class="${classes}" data-id="${m.id}" ${clickHandler}>
+            ${badge}
+            <div class="pos-product-image">
+              ${m.image ? `<img src="${m.image}" alt="${m.name}">` : '<span>💊</span>'}
+            </div>
+            <div class="pos-product-info">
+              <strong>${m.name}</strong>
+              <span class="pos-product-company">${m.company}</span>
+              ${m.barcode ? `<span class="pos-product-barcode">${m.barcode}</span>` : ''}
+            </div>
+            <div class="pos-product-meta">
+              <span class="pos-product-price">${formatCurrencyIQD(m.price)}</span>
+              <span class="pos-product-stock"><bdi class="num">${fmt(m.qty)}</bdi> متاح</span>
+            </div>
+            ${disabled ? '' : `<button class="pos-add-btn" onclick="event.stopPropagation(); addToCart(${m.id})" aria-label="إضافة للفاتورة">+</button>`}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function flashProductCard(medId) {
+      const card = document.querySelector(`.pos-product-card[data-id="${medId}"]`);
+      if (card) {
+        card.classList.remove('flash');
+        void card.offsetWidth;
+        card.classList.add('flash');
+        setTimeout(() => card.classList.remove('flash'), 700);
+      }
+    }
+
+    window.addToCart = (medId) => {
+      const med = medications.find(m => m.id === medId);
+      if (!med) return;
+      if (med.qty <= 0) {
+        toast({ title: 'الدواء غير متوفر', message: `"${med.name}" نفد من المخزون`, type: 'error' });
+        return;
+      }
+      const days = daysUntil(med.expiry);
+      if (days < 0) {
+        toast({ title: 'دواء منتهي الصلاحية', message: `لا يمكن بيع "${med.name}" بعد انتهاء صلاحيته`, type: 'error' });
+        return;
+      }
+      const existing = cart.find(c => c.id === medId);
+      const currentInCart = existing ? existing.qty : 0;
+      if (currentInCart >= med.qty) {
+        toast({
+          title: 'الكمية غير كافية',
+          message: `الكمية المتاحة في المخزون: ${fmt(med.qty)} فقط`,
+          type: 'warning'
+        });
+        return;
+      }
+      const isFirstAdd = !existing;
+      if (isFirstAdd) {
+        cart.push({ id: med.id, name: med.name, price: med.price, qty: 1 });
+      } else {
+        existing.qty += 1;
+      }
+      if (isFirstAdd && days >= 0 && days <= 30) {
+        toast({
+          title: 'تنبيه: قرب الانتهاء',
+          message: `"${med.name}" ينتهي خلال ${days} يوم`,
+          type: 'warning'
+        });
+      }
+      renderCart();
+      flashProductCard(medId);
+    };
+
+    window.increaseQty = (medId) => {
+      const med = medications.find(m => m.id === medId);
+      const item = cart.find(c => c.id === medId);
+      if (!item || !med) return;
+      if (item.qty >= med.qty) {
+        toast({
+          title: 'الكمية غير كافية',
+          message: `الحد الأقصى المتاح: ${fmt(med.qty)} وحدة`,
+          type: 'warning'
+        });
+        return;
+      }
+      item.qty += 1;
+      renderCart();
+    };
+
+    window.decreaseQty = (medId) => {
+      const item = cart.find(c => c.id === medId);
+      if (!item) return;
+      if (item.qty <= 1) {
+        if (confirm(`هل تريد إزالة "${item.name}" من الفاتورة؟`)) {
+          window.removeFromCart(medId);
+        }
+        return;
+      }
+      item.qty -= 1;
+      renderCart();
+    };
+
+    window.removeFromCart = (medId) => {
+      const el = document.querySelector(`.cart-item[data-id="${medId}"]`);
+      if (el) {
+        el.classList.add('removing');
+        setTimeout(() => {
+          cart = cart.filter(c => c.id !== medId);
+          renderCart();
+        }, 300);
+      } else {
+        cart = cart.filter(c => c.id !== medId);
+        renderCart();
+      }
+    };
+
+    function clearCart() {
+      if (cart.length === 0) return;
+      if (!confirm('هل تريد إفراغ الفاتورة الحالية؟')) return;
+      cart = [];
+      renderCart();
+      toast({ title: 'تم الإفراغ', message: 'تم إفراغ الفاتورة بنجاح', type: 'info' });
+    }
+
+    function computeCartTotals() {
+      const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
+      const discount = Math.max(0, Math.min(Number(posDiscount) || 0, subtotal));
+      const total = Math.max(0, subtotal - discount);
+      return { subtotal, discount, total };
+    }
+
+    function renderCart() {
+      const box = $('cartList');
+      const clearBtn = $('clearCartBtn');
+      const finishBtn = $('finishInvoiceBtn');
+      const discountInput = $('discountInput');
+      const paidInput = $('paidAmountInput');
+      const changeLine = $('cartChangeLine');
+      const changeEl = $('cartChange');
+      const changeLabel = $('changeLabel');
+
+      if (cart.length === 0) {
+        box.innerHTML = `
+          <div class="cart-empty">
+            <div class="cart-empty-icon">🛒</div>
+            <p>الفاتورة فارغة</p>
+            <span>اختر دواء من القائمة لإضافته</span>
+          </div>
+        `;
+        $('cartCountBadge').textContent = '0';
+        $('cartItemCount').textContent = '0';
+        $('cartTotalQty').textContent = '0';
+        $('cartSubtotal').innerHTML = formatCurrencyIQD(0);
+        $('cartTotal').innerHTML = formatCurrencyIQD(0);
+        changeEl.innerHTML = formatCurrencyIQD(0);
+        changeLine.classList.remove('negative');
+        clearBtn.disabled = true;
+        finishBtn.disabled = true;
+        return;
+      }
+
+      box.innerHTML = cart.map(item => {
+        const med = medications.find(m => m.id === item.id);
+        const maxReached = med && item.qty >= med.qty;
+        return `
+          <div class="cart-item" data-id="${item.id}">
+            <div class="cart-item-info">
+              <strong>${item.name}</strong>
+              <span class="cart-item-price">${formatCurrencyIQD(item.price)} للوحدة</span>
+            </div>
+            <div class="cart-item-total">${formatCurrencyIQD(item.qty * item.price)}</div>
+            <div class="cart-item-bottom">
+              <div class="qty-controls">
+                <button class="qty-btn qty-minus" onclick="decreaseQty(${item.id})" aria-label="تقليل">−</button>
+                <span class="qty-display">${fmt(item.qty)}</span>
+                <button class="qty-btn qty-plus" onclick="increaseQty(${item.id})" aria-label="زيادة" ${maxReached ? 'disabled' : ''}>+</button>
+              </div>
+              <button class="cart-remove" onclick="removeFromCart(${item.id})" aria-label="إزالة">×</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const totalQty = cart.reduce((s, i) => s + i.qty, 0);
+      const { subtotal, discount, total } = computeCartTotals();
+
+      $('cartCountBadge').textContent = fmt(cart.length);
+      $('cartItemCount').textContent = fmt(cart.length);
+      $('cartTotalQty').textContent = fmt(totalQty);
+      $('cartSubtotal').innerHTML = formatCurrencyIQD(subtotal);
+      $('cartTotal').innerHTML = formatCurrencyIQD(total);
+
+      // Discount validation
+      if (Number(discountInput.value) > subtotal) {
+        discountInput.value = subtotal;
+        posDiscount = subtotal;
+      }
+
+      // Auto-fill paid for card
+      if (posPaymentMethod === 'card') {
+        paidInput.disabled = true;
+        paidInput.value = total;
+        posPaidAmount = total;
+      } else {
+        paidInput.disabled = false;
+      }
+
+      const paid = Number(posPaidAmount) || 0;
+      const diff = paid - total;
+
+      if (posPaymentMethod === 'credit') {
+        const remaining = Math.max(0, total - paid);
+        changeLabel.textContent = remaining > 0 ? 'المتبقي (آجل)' : 'مدفوع بالكامل';
+        changeEl.innerHTML = formatCurrencyIQD(remaining);
+        changeLine.classList.toggle('negative', remaining > 0);
+      } else if (diff >= 0) {
+        changeLabel.textContent = 'الباقي للزبون';
+        changeEl.innerHTML = formatCurrencyIQD(diff);
+        changeLine.classList.remove('negative');
+      } else {
+        changeLabel.textContent = 'المبلغ الناقص';
+        changeEl.innerHTML = formatCurrencyIQD(Math.abs(diff));
+        changeLine.classList.add('negative');
+      }
+
+      // Enable checkout when valid
+      const canCheckout =
+        posPaymentMethod === 'card' ||
+        posPaymentMethod === 'credit' ||
+        (posPaymentMethod === 'cash' && paid >= total);
+
+      clearBtn.disabled = false;
+      finishBtn.disabled = !canCheckout;
+    }
+
+    // POS input listeners
+    $('discountInput').addEventListener('input', (e) => {
+      posDiscount = Number(e.target.value) || 0;
+      if (posDiscount < 0) {
+        posDiscount = 0;
+        e.target.value = '0';
+      }
+      renderCart();
+    });
+    $('paidAmountInput').addEventListener('input', (e) => {
+      posPaidAmount = Number(e.target.value) || 0;
+      if (posPaidAmount < 0) {
+        posPaidAmount = 0;
+        e.target.value = '0';
+      }
+      renderCart();
+    });
+    document.querySelectorAll('.payment-method-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.payment-method-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        posPaymentMethod = btn.dataset.method;
+        renderCart();
+      });
+    });
+
+    $('posSearch').addEventListener('input', (e) => {
+      posSearchTerm = e.target.value;
+      renderPosProducts();
+    });
+    $('clearCartBtn').addEventListener('click', clearCart);
+
+    $('finishInvoiceBtn').addEventListener('click', () => {
+      if (cart.length === 0) {
+        toast({ title: 'الفاتورة فارغة', message: 'أضف أدوية قبل إصدار الفاتورة', type: 'error' });
+        return;
+      }
+
+      // Validate every item
+      for (const item of cart) {
+        const med = medications.find(m => m.id === item.id);
+        if (!med) {
+          toast({ title: 'دواء غير موجود', message: `"${item.name}" لم يعد متاحاً`, type: 'error' });
+          return;
+        }
+        if (item.qty > med.qty) {
+          toast({ title: 'الكمية غير كافية', message: `"${med.name}" — المتوفر فقط ${fmt(med.qty)}`, type: 'error' });
+          return;
+        }
+        const days = daysUntil(med.expiry);
+        if (days < 0) {
+          toast({ title: 'دواء منتهي الصلاحية', message: `لا يمكن بيع "${med.name}"`, type: 'error' });
+          return;
+        }
+      }
+
+      const { subtotal, discount, total } = computeCartTotals();
+
+      // Payment validation
+      if (posPaymentMethod === 'cash' && (Number(posPaidAmount) || 0) < total) {
+        toast({
+          title: 'المبلغ المدفوع غير كافٍ',
+          message: `يجب دفع ${formatCurrencyText(total)} على الأقل`,
+          type: 'error'
+        });
+        return;
+      }
+
+      const paidAmount = posPaymentMethod === 'card'
+        ? total
+        : Number(posPaidAmount) || 0;
+      const change = posPaymentMethod === 'credit'
+        ? -(Math.max(0, total - paidAmount))
+        : paidAmount - total;
+      const remaining = posPaymentMethod === 'credit' ? Math.max(0, total - paidAmount) : 0;
+
+      const PAYMENT_LABELS = { cash: 'نقدي', card: 'بطاقة', credit: 'آجل' };
+      const invoice = {
+        id: invoices.length ? Math.max(...invoices.map(i => i.id)) + 1 : 1001,
+        date: new Date().toISOString(),
+        items: [...cart],
+        subtotal,
+        discount,
+        total,
+        paidAmount,
+        change: Math.max(0, change),
+        remaining,
+        paymentMethod: posPaymentMethod,
+        paymentMethodLabel: PAYMENT_LABELS[posPaymentMethod],
+      };
+      invoices.push(invoice);
+
+      // Deduct from stock and detect low stock
+      const lowStockMeds = [];
+      cart.forEach(item => {
+        const med = medications.find(m => m.id === item.id);
+        if (med) {
+          med.qty -= item.qty;
+          if (med.qty > 0 && med.qty <= 10) lowStockMeds.push(med);
+        }
+      });
+
+      saveMeds();
+      saveInvoices();
+
+      // Activity log: invoice summary
+      logActivity('sale_completed', 'إصدار فاتورة بيع',
+        `فاتورة #${invoice.id} · ${invoice.items.length} أصناف · ${PAYMENT_LABELS[posPaymentMethod]} · إجمالي ${formatCurrencyText(invoice.total)}`,
+        { invoiceId: invoice.id, total: invoice.total, paymentMethod: posPaymentMethod, itemCount: invoice.items.length }
+      );
+      // Per-item activity entries
+      cart.forEach(item => {
+        logActivity('sale_completed', 'بيع دواء',
+          `تم بيع ${fmt(item.qty)} قطعة من "${item.name}" ضمن فاتورة #${invoice.id}`,
+          { invoiceId: invoice.id, medId: item.id, qty: item.qty }
+        );
+      });
+      // Low stock notifications
+      lowStockMeds.forEach(med => {
+        logActivity('expiry_alert', 'تنبيه: مخزون منخفض',
+          `أصبح "${med.name}" منخفض المخزون بعد البيع (${fmt(med.qty)} متبقي)`,
+          { medId: med.id, qty: med.qty }
+        );
+        toast({
+          title: 'مخزون منخفض',
+          message: `"${med.name}" — متبقي ${fmt(med.qty)} فقط`,
+          type: 'warning',
+          duration: 5000,
+        });
+      });
+
+      // Clear cart after successful checkout
+      cart = [];
+      renderSalesPage();
+
+      // Success overlay then invoice preview
+      const overlay = document.createElement('div');
+      overlay.className = 'success-overlay';
+      overlay.innerHTML = `
+        <div class="success-card">
+          <div class="success-icon">✓</div>
+          <h3>تمت العملية بنجاح</h3>
+          <p>فاتورة رقم <strong>${formatInvoiceNumber(invoice.id)}</strong></p>
+          <p style="margin-top:8px;font-size:18px"><strong>${formatCurrencyIQD(invoice.total)}</strong></p>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      setTimeout(() => { overlay.style.transition = 'opacity 0.4s'; overlay.style.opacity = '0'; }, 1200);
+      setTimeout(() => {
+        overlay.remove();
+        showInvoice(invoice);
+      }, 1600);
+
+      toast({
+        title: 'تم البيع بنجاح',
+        message: `فاتورة #${invoice.id} · ${formatCurrencyText(invoice.total)}`,
+        type: 'success'
+      });
+    });
+
+    function showInvoice(inv) {
+      const subtotal = inv.subtotal != null ? inv.subtotal : (inv.items || []).reduce((s, i) => s + i.qty * i.price, 0);
+      const discount = inv.discount || 0;
+      const total = inv.total != null ? inv.total : subtotal;
+      const paidAmount = inv.paidAmount != null ? inv.paidAmount : total;
+      const change = inv.change || 0;
+      const remaining = inv.remaining || 0;
+      const paymentLabel = inv.paymentMethodLabel || 'نقدي';
+
+      const itemsHTML = `
+        <table class="invoice-items-table">
+          <thead>
+            <tr>
+              <th>الدواء</th>
+              <th class="num">الكمية</th>
+              <th class="num">السعر</th>
+              <th class="num">الإجمالي</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${inv.items.map(i => `
+              <tr>
+                <td>${i.name}</td>
+                <td class="num"><bdi class="num">${fmt(i.qty)}</bdi></td>
+                <td class="num">${formatCurrencyIQD(i.price)}</td>
+                <td class="num">${formatCurrencyIQD(i.qty * i.price)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+
+      const refundedBanner = isInvoiceRefunded(inv) ? `
+        <div class="refunded-banner">
+          <span class="refunded-banner-icon">
+            <svg class="lucide" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          </span>
+          <div class="refunded-banner-text">
+            <span>فاتورة مسترجعة</span>
+            ${inv.refundedAt ? `<span class="refunded-banner-meta">تاريخ الاسترجاع: <bdi class="num">${formatDateTime(inv.refundedAt)}</bdi></span>` : ''}
+          </div>
+        </div>
+      ` : '';
+
+      const content = `
+        <h4>صيدليتي</h4>
+        <p class="invoice-subtitle">فاتورة بيع</p>
+        ${refundedBanner}
+        <div class="invoice-meta">
+          <span>رقم الفاتورة: ${formatInvoiceNumber(inv.id)}</span>
+          <span><bdi class="num">${formatDateTime(inv.date)}</bdi></span>
+        </div>
+        <div class="invoice-pay-method">طريقة الدفع: <strong>${paymentLabel}</strong></div>
+        ${itemsHTML}
+        <div class="invoice-totals">
+          <div class="invoice-line">
+            <span>الإجمالي الفرعي</span>
+            <span>${formatCurrencyIQD(subtotal)}</span>
+          </div>
+          ${discount > 0 ? `
+            <div class="invoice-line invoice-discount-line">
+              <span>الخصم</span>
+              <span>− ${formatCurrencyIQD(discount)}</span>
+            </div>
+          ` : ''}
+          <div class="invoice-total">
+            <span>الإجمالي النهائي</span>
+            <span>${formatCurrencyIQD(total)}</span>
+          </div>
+          <div class="invoice-line">
+            <span>المبلغ المدفوع</span>
+            <span>${formatCurrencyIQD(paidAmount)}</span>
+          </div>
+          ${remaining > 0 ? `
+            <div class="invoice-line invoice-remaining-line">
+              <span>المتبقي (آجل)</span>
+              <span>${formatCurrencyIQD(remaining)}</span>
+            </div>
+          ` : change > 0 ? `
+            <div class="invoice-line invoice-change-line">
+              <span>الباقي للزبون</span>
+              <span>${formatCurrencyIQD(change)}</span>
+            </div>
+          ` : ''}
+        </div>
+        <p class="invoice-thanks">شكراً لزيارتكم · نتمنى لكم دوام الصحة</p>
+      `;
+      $('invoiceContent').innerHTML = content;
+      $('invoiceModal').classList.add('active');
+    }
+
+    $('closeInvoiceModal').addEventListener('click', () => $('invoiceModal').classList.remove('active'));
+    $('closeInvoiceBtn').addEventListener('click', () => $('invoiceModal').classList.remove('active'));
+    $('printInvoiceBtn').addEventListener('click', () => {
+      // Robust print: ensure invoice is fully rendered before printing.
+      // Cloning approach as JS safety net — works even if CSS print rules fail.
+      const original = document.getElementById('invoiceContent');
+      if (!original) return;
+      // Remove any prior print container
+      const prev = document.getElementById('printInvoiceContainer');
+      if (prev) prev.remove();
+      // Create a dedicated print container outside modal
+      const container = document.createElement('div');
+      container.id = 'printInvoiceContainer';
+      container.innerHTML = original.outerHTML;
+      // Inline styles to ensure visibility regardless of theme
+      container.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#fff;padding:14mm;color:#000;display:none;direction:rtl;font-family:Cairo,Tajawal,Inter,sans-serif;';
+      document.body.appendChild(container);
+      document.body.classList.add('is-printing');
+      // Show container ONLY during print
+      const printStyle = document.createElement('style');
+      printStyle.id = 'printDynamicStyle';
+      printStyle.textContent = `
+        @media print {
+          body.is-printing > *:not(#printInvoiceContainer) { display: none !important; }
+          body.is-printing #printInvoiceContainer { display: block !important; position: static !important; padding: 0 !important; }
+          body.is-printing #printInvoiceContainer #invoiceContent { background:#fff !important; color:#000 !important; border:none !important; box-shadow:none !important; padding:0 !important; opacity:1 !important; }
+        }
+      `;
+      document.head.appendChild(printStyle);
+      // Print after slight delay (let DOM settle)
+      setTimeout(() => {
+        window.print();
+        // Cleanup after the print dialog closes
+        setTimeout(() => {
+          container.remove();
+          printStyle.remove();
+          document.body.classList.remove('is-printing');
+        }, 800);
+      }, 80);
+    });
+
+    function renderAlerts() {
+      const expiring = medications.filter(m => { const d = daysUntil(m.expiry); return d >= 0 && d <= 30; })
+        .sort((a, b) => daysUntil(a.expiry) - daysUntil(b.expiry));
+      const lowStock = medications.filter(m => m.qty > 0 && m.qty <= 10).sort((a, b) => a.qty - b.qty);
+
+      const expBox = $('expiringAlerts');
+      if (expiring.length === 0) {
+        expBox.innerHTML = `
+          <div class="empty-state-pro">
+            <div class="empty-icon-wrap">✅</div>
+            <h4>كل الأدوية صالحة</h4>
+            <p>لا توجد أدوية تنتهي صلاحيتها خلال الـ 30 يوماً القادمة</p>
+          </div>`;
+      } else {
+        expBox.innerHTML = expiring.map(m => {
+          const d = daysUntil(m.expiry);
+          return `
+            <div class="alert-item warning">
+              <div class="alert-info">
+                <strong>${m.name}</strong>
+                <span>${m.company} · الكمية: ${m.qty}</span>
+              </div>
+              <div class="alert-value">${d === 0 ? 'ينتهي اليوم' : `${d} يوم`}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      const lowBox = $('lowStockAlerts');
+      if (lowStock.length === 0) {
+        lowBox.innerHTML = `
+          <div class="empty-state-pro">
+            <div class="empty-icon-wrap">📦</div>
+            <h4>المخزون في وضع جيد</h4>
+            <p>جميع الأدوية لديها كميات كافية في المخزون</p>
+          </div>`;
+      } else {
+        lowBox.innerHTML = lowStock.map(m => `
+          <div class="alert-item danger">
+            <div class="alert-info">
+              <strong>${m.name}</strong>
+              <span>${m.company}</span>
+            </div>
+            <div class="alert-value">متبقي: ${m.qty}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function renderReports() {
+      const today = todayStr();
+      const todayInvoices = invoices.filter(inv => inv.date.startsWith(today));
+      const todayActive = todayInvoices.filter(i => !isInvoiceRefunded(i));
+      const todayRefunded = todayInvoices.filter(i => isInvoiceRefunded(i));
+      const dailyProfit = todayActive.reduce((s, i) => s + i.total, 0);
+      const dailyRefunded = todayRefunded.reduce((s, i) => s + i.total, 0);
+
+      $('dailyProfit').textContent = fmt(dailyProfit) + ' د.ع';
+      const refundsBadge = dailyRefunded > 0
+        ? ` · مسترجعات: ${fmt(dailyRefunded)} د.ع`
+        : '';
+      $('dailyProfitDate').textContent = `إيرادات يوم ${formatDate(new Date())} · ${todayActive.length} فاتورة فعّالة${refundsBadge}`;
+
+      const salesMap = {};
+      invoices.filter(inv => !isInvoiceRefunded(inv)).forEach(inv => {
+        inv.items.forEach(item => {
+          if (!salesMap[item.id]) salesMap[item.id] = { name: item.name, qty: 0, revenue: 0 };
+          salesMap[item.id].qty += item.qty;
+          salesMap[item.id].revenue += item.qty * item.price;
+        });
+      });
+
+      const sortedSales = Object.values(salesMap).sort((a, b) => b.qty - a.qty);
+      if (sortedSales.length > 0) {
+        const top = sortedSales[0];
+        $('topMedication').textContent = top.name;
+        $('topMedicationStats').textContent = `تم بيع ${top.qty} وحدة بإيراد ${fmt(top.revenue)} د.ع`;
+      } else {
+        $('topMedication').textContent = 'لا يوجد';
+        $('topMedicationStats').textContent = 'لم يتم تسجيل مبيعات بعد';
+      }
+
+      const outOfStock = medications.filter(m => m.qty === 0);
+      const outBox = $('outOfStockList');
+      if (outOfStock.length === 0) {
+        outBox.innerHTML = `
+          <div class="empty-state-pro">
+            <div class="empty-icon-wrap">✅</div>
+            <h4>المخزون كامل</h4>
+            <p>جميع الأدوية متوفرة في المخزون ولا يوجد ما نفد منه</p>
+          </div>`;
+      } else {
+        outBox.innerHTML = outOfStock.map(m => `
+          <div class="alert-item danger">
+            <div class="alert-info">
+              <strong>${m.name}</strong>
+              <span>${m.company}</span>
+            </div>
+            <div class="alert-value">نفد المخزون</div>
+          </div>
+        `).join('');
+      }
+
+      const reportBody = $('salesReportBody');
+      if (sortedSales.length === 0) {
+        reportBody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--text-light)">لا توجد بيانات مبيعات</td></tr>';
+      } else {
+        reportBody.innerHTML = sortedSales.map(s => `
+          <tr>
+            <td><strong>${s.name}</strong></td>
+            <td class="num"><bdi>${fmt(s.qty)}</bdi></td>
+            <td class="num"><span class="cell-money">${fmt(s.revenue)} د.ع</span></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Invoice page filter state
+    let invoiceSearch = '';
+    let invoiceStatusFilter = 'all';
+    let invoicePaymentFilter = 'all';
+    let invoiceDateFilter = 'all';
+
+    function isInvoiceInDateRange(inv, range) {
+      if (range === 'all') return true;
+      const d = new Date(inv.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (range === 'today') return d >= today;
+      if (range === 'week') {
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 6);
+        return d >= weekAgo;
+      }
+      if (range === 'month') {
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        return d >= monthStart;
+      }
+      return true;
+    }
+
+    function filterInvoiceList() {
+      const cleanSearch = (invoiceSearch || '').toString().replace(/[^0-9]/g, '').trim();
+      return invoices.filter(inv => {
+        if (cleanSearch && !String(inv.id).includes(cleanSearch)) return false;
+        if (invoiceStatusFilter !== 'all') {
+          const status = isInvoiceRefunded(inv) ? 'refunded' : 'paid';
+          if (status !== invoiceStatusFilter) return false;
+        }
+        if (invoicePaymentFilter !== 'all') {
+          const method = inv.paymentMethod || 'cash';
+          if (method !== invoicePaymentFilter) return false;
+        }
+        if (!isInvoiceInDateRange(inv, invoiceDateFilter)) return false;
+        return true;
+      });
+    }
+
+    function renderInvoices() {
+      const body = $('invoicesBody');
+      const clearBtn = $('clearAllInvoicesBtn');
+
+      // Summary stats (always reflect ALL invoices, not just filtered)
+      const total = invoices.length;
+      const refundedInvs = invoices.filter(i => isInvoiceRefunded(i));
+      const paidInvs = invoices.filter(i => !isInvoiceRefunded(i));
+      const activeRevenue = paidInvs.reduce((s, i) => s + (Number(i.total) || 0), 0);
+      const refundedTotal = refundedInvs.reduce((s, i) => s + (Number(i.total) || 0), 0);
+
+      $('statTotalInvoices').textContent = fmt(total);
+      $('statPaidInvoices').textContent = fmt(paidInvs.length);
+      $('statRefundedInvoices').textContent = fmt(refundedInvs.length);
+      $('statActiveRevenue').innerHTML = formatCurrencyIQD(activeRevenue);
+      $('statRefundedTotal').innerHTML = formatCurrencyIQD(refundedTotal);
+
+      clearBtn.disabled = total === 0;
+
+      const filtered = filterInvoiceList().slice().reverse();
+
+      if (filtered.length === 0) {
+        const hasAny = total > 0;
+        body.innerHTML = `
+          <tr><td colspan="7">
+            <div class="empty-state-pro">
+              <div class="empty-icon-wrap">${hasAny ? '🔍' : '🧾'}</div>
+              <h4>${hasAny ? 'لا توجد نتائج' : 'لا توجد فواتير'}</h4>
+              <p>${hasAny ? 'جرّب تغيير البحث أو الفلاتر.' : 'ستظهر الفواتير هنا بعد إصدار أول عملية بيع.'}</p>
+            </div>
+          </td></tr>`;
+        return;
+      }
+
+      const PAYMENT_LABELS = { cash: 'نقدي', card: 'بطاقة', credit: 'آجل' };
+      const PAYMENT_ICONS = {
+        cash: '<svg class="lucide" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>',
+        card: '<svg class="lucide" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>',
+        credit: '<svg class="lucide" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      };
+
+      body.innerHTML = filtered.map(inv => {
+        const refunded = isInvoiceRefunded(inv);
+        const method = inv.paymentMethod || 'cash';
+        const methodLabel = inv.paymentMethodLabel || PAYMENT_LABELS[method] || 'نقدي';
+
+        return `
+          <tr class="invoice-row ${refunded ? 'is-refunded' : ''}">
+            <td class="num"><strong>${formatInvoiceNumber(inv.id)}</strong></td>
+            <td><bdi class="num">${formatDateTime(inv.date)}</bdi></td>
+            <td>
+              <span class="payment-pill payment-${method}">
+                ${PAYMENT_ICONS[method] || ''}
+                ${methodLabel}
+              </span>
+            </td>
+            <td class="num"><bdi class="num">${fmt(inv.items.length)}</bdi></td>
+            <td class="num"><strong>${formatCurrencyIQD(inv.total)}</strong></td>
+            <td>
+              <span class="status-tag ${refunded ? 'status-warn' : 'status-ok'}">
+                ${refunded ? 'مسترجعة' : 'مدفوعة'}
+              </span>
+            </td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-ghost btn-icon" onclick="viewInvoice(${inv.id})" title="عرض الفاتورة">
+                  <svg class="lucide" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  عرض
+                </button>
+                <button class="btn btn-ghost btn-icon" onclick="printInvoiceById(${inv.id})" title="طباعة الفاتورة">
+                  <svg class="lucide" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                  طباعة
+                </button>
+                ${!refunded ? `
+                  <button class="btn btn-warning btn-icon" onclick="confirmRefundInvoice(${inv.id})" title="استرجاع الفاتورة">
+                    <svg class="lucide" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                    استرجاع
+                  </button>
+                ` : ''}
+                <button class="btn btn-danger btn-icon" onclick="confirmDeleteInvoice(${inv.id})" title="حذف الفاتورة">
+                  <svg class="lucide" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="m19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  حذف
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    window.printInvoiceById = (id) => {
+      const inv = invoices.find(i => i.id === id);
+      if (!inv) return;
+      showInvoice(inv);
+      setTimeout(() => window.print(), 250);
+    };
+
+    // Invoice page search + filters
+    $('invoiceSearch').addEventListener('input', (e) => {
+      invoiceSearch = e.target.value;
+      renderInvoices();
+    });
+    document.querySelectorAll('[data-filter-set] .pill').forEach(p => {
+      p.addEventListener('click', () => {
+        const set = p.parentElement.dataset.filterSet;
+        p.parentElement.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+        if (set === 'status') invoiceStatusFilter = p.dataset.statusFilter;
+        else if (set === 'payment') invoicePaymentFilter = p.dataset.paymentFilter;
+        else if (set === 'date') invoiceDateFilter = p.dataset.dateFilter;
+        renderInvoices();
+      });
+    });
+
+    window.viewInvoice = (id) => {
+      const inv = invoices.find(i => i.id === id);
+      if (inv) showInvoice(inv);
+    };
+
+    // ============== Premium Confirm Modal ==============
+    let _confirmHandler = null;
+    function showConfirmModal({ title, message, confirmText = 'حذف', cancelText = 'إلغاء', onConfirm }) {
+      $('confirmTitle').textContent = title;
+      $('confirmMessage').textContent = message;
+      $('confirmCancelBtn').textContent = cancelText;
+      $('confirmConfirmBtn').innerHTML = `
+        <svg class="lucide" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="m19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        ${confirmText}
+      `;
+      _confirmHandler = onConfirm;
+      $('confirmModal').classList.add('active');
+    }
+    function closeConfirmModal() {
+      $('confirmModal').classList.remove('active');
+      _confirmHandler = null;
+    }
+    $('confirmConfirmBtn').addEventListener('click', () => {
+      const handler = _confirmHandler;
+      closeConfirmModal();
+      if (typeof handler === 'function') handler();
+    });
+    $('confirmCancelBtn').addEventListener('click', closeConfirmModal);
+    $('confirmCloseBtn').addEventListener('click', closeConfirmModal);
+
+    // ============== Invoice Management (Delete / Clear) ==============
+    window.confirmDeleteInvoice = (id) => {
+      const inv = invoices.find(i => i.id === id);
+      if (!inv) return;
+      showConfirmModal({
+        title: 'حذف الفاتورة',
+        message: 'هل أنت متأكد من حذف هذه الفاتورة؟ لا يمكن التراجع عن هذا الإجراء.',
+        confirmText: 'حذف',
+        onConfirm: () => {
+          invoices = invoices.filter(i => i.id !== id);
+          saveInvoices();
+          renderInvoices();
+          logActivity('med_deleted', 'حذف فاتورة',
+            `تم حذف الفاتورة #${id}`,
+            { invoiceId: id, total: inv.total }
+          );
+          toast({ title: 'تم الحذف', message: 'تم حذف الفاتورة بنجاح', type: 'success' });
+        }
+      });
+    };
+
+    // ============== Refund / Invoice Return ==============
+    function isInvoiceRefunded(invoice) {
+      return !!(invoice && invoice.status === 'refunded');
+    }
+
+    let pendingRefundId = null;
+    function closeRefundModal() {
+      $('refundModal').classList.remove('active');
+      pendingRefundId = null;
+    }
+
+    window.confirmRefundInvoice = (id) => {
+      const inv = invoices.find(i => i.id === id);
+      if (!inv) return;
+      if (isInvoiceRefunded(inv)) {
+        toast({ title: 'مسترجعة مسبقاً', message: 'هذه الفاتورة مسترجعة مسبقاً', type: 'warning' });
+        return;
+      }
+      pendingRefundId = id;
+      $('refundSummary').innerHTML = `
+        <div class="ref-cell">
+          <span class="ref-label">رقم الفاتورة</span>
+          <span class="ref-value">${formatInvoiceNumber(inv.id)}</span>
+        </div>
+        <div class="ref-cell">
+          <span class="ref-label">عدد الأصناف</span>
+          <span class="ref-value"><bdi class="num">${fmt(inv.items.length)}</bdi></span>
+        </div>
+        <div class="ref-cell">
+          <span class="ref-label">الإجمالي</span>
+          <span class="ref-value">${formatCurrencyIQD(inv.total)}</span>
+        </div>
+        <div class="ref-cell">
+          <span class="ref-label">طريقة الدفع</span>
+          <span class="ref-value">${inv.paymentMethodLabel || 'نقدي'}</span>
+        </div>
+        <div class="ref-cell full">
+          <span class="ref-label">التاريخ</span>
+          <span class="ref-value"><bdi class="num">${formatDateTime(inv.date)}</bdi></span>
+        </div>
+      `;
+      $('refundModal').classList.add('active');
+    };
+
+    $('refundCancelBtn').addEventListener('click', closeRefundModal);
+    $('refundCloseBtn').addEventListener('click', closeRefundModal);
+    $('refundConfirmBtn').addEventListener('click', () => {
+      const id = pendingRefundId;
+      const inv = invoices.find(i => i.id === id);
+      if (!inv) { closeRefundModal(); return; }
+      if (isInvoiceRefunded(inv)) {
+        closeRefundModal();
+        toast({ title: 'مسترجعة مسبقاً', message: 'هذه الفاتورة مسترجعة مسبقاً', type: 'warning' });
+        return;
+      }
+
+      let missingCount = 0;
+      const restoredItems = [];
+      inv.items.forEach(item => {
+        const med = medications.find(m => m.id === item.id);
+        if (med) {
+          med.qty += item.qty;
+          restoredItems.push({ name: item.name, qty: item.qty });
+        } else {
+          missingCount++;
+        }
+      });
+
+      inv.status = 'refunded';
+      inv.refundedAt = new Date().toISOString();
+
+      saveMeds();
+      saveInvoices();
+
+      logActivity('med_refilled', 'استرجاع فاتورة',
+        `تم استرجاع الفاتورة #${inv.id}${missingCount > 0 ? ` (${missingCount} دواء غير موجود)` : ''}`,
+        { invoiceId: inv.id, total: inv.total, missingItems: missingCount }
+      );
+      restoredItems.forEach(r => {
+        logActivity('med_refilled', 'إرجاع للمخزون',
+          `تم إرجاع ${fmt(r.qty)} قطعة من "${r.name}" إلى المخزون`,
+          { invoiceId: inv.id, qty: r.qty }
+        );
+      });
+
+      closeRefundModal();
+      renderInvoices();
+
+      if (missingCount > 0) {
+        toast({
+          title: 'استرجاع جزئي',
+          message: 'تم الاسترجاع، لكن بعض الأدوية غير موجودة في المخزون الحالي',
+          type: 'warning'
+        });
+      } else {
+        toast({
+          title: 'تم الاسترجاع',
+          message: 'تم استرجاع الفاتورة وإرجاع الكميات إلى المخزون',
+          type: 'success'
+        });
+      }
+    });
+
+    $('clearAllInvoicesBtn').addEventListener('click', () => {
+      if (invoices.length === 0) return;
+      const count = invoices.length;
+      showConfirmModal({
+        title: 'تفريغ جميع الفواتير',
+        message: 'هل أنت متأكد من حذف جميع الفواتير؟ هذا الإجراء لا يمكن التراجع عنه.',
+        confirmText: 'تفريغ الفواتير',
+        onConfirm: () => {
+          invoices = [];
+          saveInvoices();
+          renderInvoices();
+          logActivity('med_deleted', 'تفريغ الفواتير',
+            `تم تفريغ جميع الفواتير (${fmt(count)} فاتورة)`,
+            { count }
+          );
+          toast({ title: 'تم التفريغ', message: 'تم تفريغ جميع الفواتير', type: 'success' });
+        }
+      });
+    });
+
+    // ============== إعادة ملء المخزون ==============
+    let refillingMedId = null;
+
+    window.openRefillModal = (id) => {
+      const med = medications.find(m => m.id === id);
+      if (!med) return;
+      refillingMedId = id;
+      $('refillMedName').textContent = med.name;
+      $('refillMedCompany').textContent = med.company;
+      $('refillCurrentQty').textContent = fmt(med.qty);
+      $('refillAddQty').value = '';
+      $('refillNewTotal').textContent = fmt(med.qty);
+      $('refillModal').classList.add('active');
+      setTimeout(() => $('refillAddQty').focus(), 100);
+    };
+
+    function closeRefillModal() {
+      $('refillModal').classList.remove('active');
+      refillingMedId = null;
+    }
+
+    $('closeRefillModal').addEventListener('click', closeRefillModal);
+    $('cancelRefillBtn').addEventListener('click', closeRefillModal);
+
+    $('refillAddQty').addEventListener('input', () => {
+      const med = medications.find(m => m.id === refillingMedId);
+      if (!med) return;
+      const add = parseInt($('refillAddQty').value) || 0;
+      $('refillNewTotal').textContent = fmt(med.qty + add);
+    });
+
+    $('refillForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const med = medications.find(m => m.id === refillingMedId);
+      if (!med) return;
+      const add = parseInt($('refillAddQty').value);
+      if (!add || add <= 0) { toast('أدخل كمية صحيحة', 'error'); return; }
+
+      const oldQty = med.qty;
+      med.qty += add;
+      saveMeds();
+      closeRefillModal();
+      renderMedications();
+
+      // وميض الخلية بعد التحديث
+      setTimeout(() => {
+        const rows = document.querySelectorAll('#medicationsBody tr');
+        rows.forEach(row => {
+          const editBtn = row.querySelector(`[onclick="editMed(${med.id})"]`);
+          if (editBtn) {
+            const qtyCell = row.querySelectorAll('td.num')[0];
+            if (qtyCell) {
+              const span = qtyCell.querySelector('.cell-money');
+              if (span) span.classList.add('refill-flash');
+            }
+          }
+        });
+      }, 50);
+
+      showSuccessOverlay(med.name, add, oldQty, med.qty);
+      logActivity('med_refilled', 'إعادة ملء مخزون',
+        `تمت إضافة ${fmt(add)} وحدة إلى "${med.name}" (${fmt(oldQty)} → ${fmt(med.qty)})`,
+        { medName: med.name, medId: med.id, added: add, oldQty, newQty: med.qty }
+      );
+      toast({
+        title: 'تمت إعادة الملء',
+        message: `+${fmt(add)} وحدة من "${med.name}" · الإجمالي ${fmt(med.qty)}`,
+        type: 'success'
+      });
+    });
+
+    function showSuccessOverlay(medName, added, oldQty, newQty) {
+      const overlay = document.createElement('div');
+      overlay.className = 'success-overlay';
+      overlay.innerHTML = `
+        <div class="success-card">
+          <div class="success-icon">✓</div>
+          <h3>تمت إعادة الملء بنجاح</h3>
+          <p>تمت إضافة <strong>${fmt(added)}</strong> وحدة من <strong>${medName}</strong></p>
+          <p style="margin-top:8px;font-size:13px">المخزون: ${fmt(oldQty)} ← <strong>${fmt(newQty)}</strong></p>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      setTimeout(() => {
+        overlay.style.transition = 'opacity 0.4s';
+        overlay.style.opacity = '0';
+      }, 1400);
+      setTimeout(() => overlay.remove(), 1800);
+    }
+
+    // ============== سجل النشاط (Activity Timeline) ==============
+    const ACTIVITY_ICONS = {
+      med_added: '➕',
+      med_edited: '✏️',
+      med_deleted: '🗑️',
+      med_refilled: '📦',
+      sale_completed: '💳',
+      expiry_alert: '⏰',
+    };
+    let activitySearchTerm = '';
+    let activityFilter = 'all';
+
+    function formatGroupDate(dateStr) {
+      const d = new Date(dateStr);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (d.toDateString() === today.toDateString()) return 'اليوم';
+      if (d.toDateString() === yesterday.toDateString()) return 'أمس';
+      return d.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', numberingSystem: 'latn' });
+    }
+
+    function getRelativeTime(dateStr) {
+      const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+      if (diff < 30) return 'الآن';
+      if (diff < 60) return `منذ ${diff} ثانية`;
+      if (diff < 3600) return `منذ ${Math.floor(diff / 60)} دقيقة`;
+      if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} ساعة`;
+      if (diff < 604800) return `منذ ${Math.floor(diff / 86400)} يوم`;
+      if (diff < 2592000) return `منذ ${Math.floor(diff / 604800)} أسبوع`;
+      return formatDate(dateStr);
+    }
+
+    function formatExactTime(dateStr) {
+      return formatTime(dateStr);
+    }
+
+    function checkExpiryAlerts() {
+      const today = new Date().toDateString();
+      const todayLogged = activities
+        .filter(a => a.type === 'expiry_alert' && new Date(a.date).toDateString() === today)
+        .map(a => a.meta && a.meta.medId);
+      medications.forEach(m => {
+        const days = daysUntil(m.expiry);
+        if (days >= 0 && days <= 30 && !todayLogged.includes(m.id)) {
+          logActivity(
+            'expiry_alert',
+            'تنبيه انتهاء صلاحية',
+            `${m.name} ${days === 0 ? 'ينتهي اليوم' : `ينتهي خلال ${days} يوم`}`,
+            { medId: m.id, days }
+          );
+        }
+      });
+    }
+
+    function renderActivityPage() {
+      const term = activitySearchTerm.toLowerCase().trim();
+      let filtered = activities.slice().reverse();
+      if (activityFilter !== 'all') filtered = filtered.filter(a => a.type === activityFilter);
+      if (term) {
+        filtered = filtered.filter(a =>
+          (a.title || '').toLowerCase().includes(term) ||
+          (a.message || '').toLowerCase().includes(term)
+        );
+      }
+
+      const container = $('activityTimeline');
+      if (filtered.length === 0) {
+        const empty = term || activityFilter !== 'all';
+        container.innerHTML = `
+          <div class="timeline-empty">
+            <div class="timeline-empty-icon">${empty ? '🔍' : '📋'}</div>
+            <p>${empty ? 'لا توجد نتائج مطابقة' : 'لا يوجد نشاط مسجّل بعد'}</p>
+            <span>${empty ? 'جرّب كلمات بحث أو فلاتر مختلفة' : 'ستظهر هنا جميع العمليات بمجرد حدوثها'}</span>
+          </div>
+        `;
+        return;
+      }
+
+      const groups = {};
+      filtered.forEach(a => {
+        const day = formatGroupDate(a.date);
+        if (!groups[day]) groups[day] = [];
+        groups[day].push(a);
+      });
+
+      container.innerHTML = Object.entries(groups).map(([day, items], gIdx) => `
+        <div class="timeline-group" style="animation-delay: ${gIdx * 0.06}s">
+          <div class="timeline-date-header">${day}</div>
+          <div class="timeline-items">
+            ${items.map((a, i) => `
+              <div class="activity-card" data-type="${a.type}" style="animation-delay: ${(gIdx * 0.06) + (i * 0.04)}s">
+                <div class="activity-node"></div>
+                <div class="activity-icon">${ACTIVITY_ICONS[a.type] || '•'}</div>
+                <div class="activity-content">
+                  <span class="activity-title">${a.title || ''}</span>
+                  <span class="activity-message">${a.message || ''}</span>
+                </div>
+                <div class="activity-time">
+                  <span class="activity-time-relative">${getRelativeTime(a.date)}</span>
+                  <span class="activity-time-absolute">${formatExactTime(a.date)}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    $('activitySearch').addEventListener('input', (e) => {
+      activitySearchTerm = e.target.value;
+      renderActivityPage();
+    });
+
+    document.querySelectorAll('.activity-filters .pill').forEach(p => {
+      p.addEventListener('click', () => {
+        document.querySelectorAll('.activity-filters .pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+        activityFilter = p.dataset.filter;
+        renderActivityPage();
+      });
+    });
+
+    $('clearActivityBtn').addEventListener('click', () => {
+      if (activities.length === 0) {
+        toast({ title: 'السجل فارغ', message: 'لا يوجد نشاط لمسحه', type: 'info' });
+        return;
+      }
+      if (!confirm('هل تريد مسح كل سجل النشاط؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+      activities = [];
+      saveActivities();
+      renderActivityPage();
+      toast({ title: 'تم المسح', message: 'تم مسح سجل النشاط بالكامل', type: 'info' });
+    });
+
+    // ============== تفاصيل الدواء ==============
+    let currentDetailsMedId = null;
+
+    function findLastSaleForMed(medId) {
+      for (let i = invoices.length - 1; i >= 0; i--) {
+        const item = invoices[i].items.find(it => it.id === medId);
+        if (item) return { invoice: invoices[i], item };
+      }
+      return null;
+    }
+
+    window.openMedDetails = (id) => {
+      const med = medications.find(m => m.id === id);
+      if (!med) return;
+      currentDetailsMedId = id;
+
+      $('detailsName').textContent = med.name;
+      $('detailsCompany').textContent = med.company;
+      $('detailsPrice').innerHTML = formatCurrencyIQD(med.price);
+
+      const imgContainer = $('detailsImage');
+      imgContainer.innerHTML = med.image
+        ? `<img src="${med.image}" alt="${med.name}">`
+        : '<span class="image-placeholder">💊</span>';
+
+      const expStatus = getMedStatus(med);
+      const qtyStatus = getQtyStatus(med);
+      $('detailsExpiryStatus').className = 'status-tag ' + expStatus.class;
+      $('detailsExpiryStatus').textContent = expStatus.label;
+      $('detailsQtyStatus').className = 'status-tag ' + qtyStatus.class;
+      $('detailsQtyStatus').textContent = qtyStatus.label;
+
+      $('detailsQty').innerHTML = `<bdi>${fmt(med.qty)}</bdi> وحدة`;
+      $('detailsExpiry').textContent = formatDate(med.expiry);
+      $('detailsBarcode').textContent = med.barcode || '—';
+      $('detailsAddedDate').textContent = med.addedDate ? formatDate(med.addedDate) : '—';
+
+      const descEl = $('detailsDescription');
+      if (med.description && med.description.trim()) {
+        descEl.textContent = med.description;
+        descEl.classList.remove('muted');
+      } else {
+        descEl.textContent = 'لا يوجد وصف لهذا الدواء';
+        descEl.classList.add('muted');
+      }
+
+      const lastSaleEl = $('detailsLastSale');
+      const lastSale = findLastSaleForMed(med.id);
+      if (lastSale) {
+        const d = new Date(lastSale.invoice.date);
+        const date = formatDate(lastSale.invoice.date);
+        const time = formatTime(lastSale.invoice.date);
+        lastSaleEl.classList.remove('muted');
+        lastSaleEl.innerHTML = `
+          <div class="last-sale-card">
+            <div class="sale-meta">
+              <strong>فاتورة ${formatInvoiceNumber(lastSale.invoice.id)}</strong>
+              <span><bdi class="num">${date} · ${time}</bdi></span>
+            </div>
+            <span class="sale-qty"><bdi class="num">${fmt(lastSale.item.qty)}</bdi> × ${formatCurrencyIQD(lastSale.item.price)}</span>
+          </div>
+        `;
+      } else {
+        lastSaleEl.classList.add('muted');
+        lastSaleEl.textContent = 'لا توجد مبيعات سابقة لهذا الدواء';
+      }
+
+      $('detailsModal').classList.add('active');
+    };
+
+    function closeMedDetails() {
+      $('detailsModal').classList.remove('active');
+      currentDetailsMedId = null;
+    }
+
+    $('closeDetailsModal').addEventListener('click', closeMedDetails);
+    $('closeDetailsBtn').addEventListener('click', closeMedDetails);
+
+    $('detailsEditBtn').addEventListener('click', () => {
+      const med = medications.find(m => m.id === currentDetailsMedId);
+      if (med) {
+        closeMedDetails();
+        setTimeout(() => openMedModal(med), 250);
+      }
+    });
+
+    $('detailsRefillBtn').addEventListener('click', () => {
+      const id = currentDetailsMedId;
+      if (!id) return;
+      closeMedDetails();
+      setTimeout(() => openRefillModal(id), 250);
+    });
+
+    // إغلاق النوافذ عبر مفتاح Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if ($('refundModal').classList.contains('active')) closeRefundModal();
+        else if ($('confirmModal').classList.contains('active')) closeConfirmModal();
+        else if ($('detailsModal').classList.contains('active')) closeMedDetails();
+        else if ($('medModal').classList.contains('active')) closeMedModal();
+        else if ($('refillModal').classList.contains('active')) closeRefillModal();
+        else if ($('invoiceModal').classList.contains('active')) $('invoiceModal').classList.remove('active');
+      }
+    });
+
+    // ============== Dock (Magnification + Navigation) ==============
+    (function initDock() {
+      const panel = $('dockPanel');
+      if (!panel) return;
+      const items = Array.from(panel.querySelectorAll('.dock-item'));
+      const BASE_SIZE = 52;
+      const MAGNIFY = 72;
+      const DISTANCE = 140;
+      let raf = null;
+
+      // Navigate via dock + sync active state with main nav
+      items.forEach(item => {
+        item.addEventListener('click', () => {
+          const targetPage = item.dataset.page;
+          const navBtn = document.querySelector(`.nav-btn[data-page="${targetPage}"]`);
+          if (navBtn) navBtn.click();
+        });
+      });
+
+      function syncActive() {
+        const activeNav = document.querySelector('.nav-btn.active');
+        const activePage = activeNav ? activeNav.dataset.page : 'dashboard';
+        items.forEach(it => {
+          it.classList.toggle('active', it.dataset.page === activePage);
+        });
+      }
+      syncActive();
+      const navObserver = new MutationObserver(syncActive);
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        navObserver.observe(b, { attributes: true, attributeFilter: ['class'] });
+      });
+
+      function applyMagnification(mouseX) {
         items.forEach(item => {
-          item.addEventListener('click', (e) => {
-            const targetPage = item.dataset.page;
-            const navBtn = document.querySelector(`.nav-btn[data-page="${targetPage}"]`);
-            if (navBtn) {
-              navBtn.click();
-            } else {
-              // Fallback if nav-btn missing — switch pages directly
-              document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-              const targetPageEl = $(targetPage);
-              if (targetPageEl) targetPageEl.classList.add('active');
-            }
-          });
+          const rect = item.getBoundingClientRect();
+          const itemCenter = rect.left + rect.width / 2;
+          const dist = Math.abs(mouseX - itemCenter);
+          let size = BASE_SIZE;
+          if (dist < DISTANCE) {
+            const ratio = 1 - dist / DISTANCE;
+            // Smooth ease-out (spring-like)
+            const eased = 1 - Math.pow(1 - ratio, 3);
+            size = BASE_SIZE + (MAGNIFY - BASE_SIZE) * eased;
+          }
+          item.style.width = size + 'px';
+          item.style.height = size + 'px';
         });
+      }
 
-        // Sync active state with nav-btn
-        function syncActive() {
-          const activeNav = document.querySelector('.nav-btn.active');
-          const activePage = activeNav ? activeNav.dataset.page : 'dashboard';
-          items.forEach(it => it.classList.toggle('active', it.dataset.page === activePage));
-        }
-        syncActive();
-        const navObserver = new MutationObserver(syncActive);
-        document.querySelectorAll('.nav-btn').forEach(b => {
-          navObserver.observe(b, { attributes: true, attributeFilter: ['class'] });
-        });
+      panel.addEventListener('mousemove', (e) => {
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => applyMagnification(e.clientX));
+      });
 
-        // Magnification on mousemove
-        function applyMagnification(mouseX) {
-          items.forEach(item => {
-            const rect = item.getBoundingClientRect();
-            const itemCenter = rect.left + rect.width / 2;
-            const dist = Math.abs(mouseX - itemCenter);
-            let size = BASE_SIZE;
-            if (dist < DISTANCE) {
-              const ratio = 1 - dist / DISTANCE;
-              const eased = 1 - Math.pow(1 - ratio, 3);
-              size = BASE_SIZE + (MAGNIFY - BASE_SIZE) * eased;
-            }
-            item.style.width = size + 'px';
-            item.style.height = size + 'px';
-          });
-        }
-        dockPanel.addEventListener('mousemove', (e) => {
-          if (raf) cancelAnimationFrame(raf);
-          raf = requestAnimationFrame(() => applyMagnification(e.clientX));
-        });
-        dockPanel.addEventListener('mouseleave', () => {
-          if (raf) cancelAnimationFrame(raf);
-          items.forEach(item => {
-            item.style.width = BASE_SIZE + 'px';
-            item.style.height = BASE_SIZE + 'px';
-          });
-        });
-        // Initialize sizes
+      panel.addEventListener('mouseleave', () => {
+        if (raf) cancelAnimationFrame(raf);
         items.forEach(item => {
           item.style.width = BASE_SIZE + 'px';
           item.style.height = BASE_SIZE + 'px';
         });
-      }
+      });
 
-      // ---------- 3) Mirror #alertsBadge → #dockAlertsBadge ----------
-      const sourceBadge = $('alertsBadge');
-      const dockBadge = $('dockAlertsBadge');
-      function mirrorBadge() {
-        if (!sourceBadge || !dockBadge) return;
-        const v = sourceBadge.textContent || '0';
-        dockBadge.textContent = v;
-        dockBadge.dataset.empty = sourceBadge.dataset.empty || (Number(v) === 0 ? 'true' : 'false');
-      }
-      if (sourceBadge && dockBadge) {
-        mirrorBadge();
-        const badgeObserver = new MutationObserver(mirrorBadge);
-        badgeObserver.observe(sourceBadge, { childList: true, characterData: true, subtree: true, attributes: true });
-      }
+      // Initialize sizes
+      items.forEach(item => {
+        item.style.width = BASE_SIZE + 'px';
+        item.style.height = BASE_SIZE + 'px';
+      });
     })();
+
+    checkExpiryAlerts();
+    renderDashboard();
   </script>
 </body>
 </html>
