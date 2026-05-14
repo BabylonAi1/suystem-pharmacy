@@ -352,36 +352,42 @@ document.querySelectorAll('.pill').forEach(p => {
 });
 
 // ============== المبيعات ==============
+// دالة مساعدة آمنة: تتجاهل العنصر إذا غير موجود
+function on(id, ev, fn) { const el = $(id); if (el) el.addEventListener(ev, fn); }
+function setVal(id, v) { const el = $(id); if (el) el.value = v; }
+function getVal(id) { const el = $(id); return el ? el.value : ''; }
+
 function renderSalesPage() {
   const select = $('saleMedSelect');
+  if (!select) return; // الصفحة قد تكون بتصميم مختلف
   const available = medications.filter(m => m.qty > 0);
   select.innerHTML = '<option value="">-- اختر دواء --</option>' +
     available.map(m => `<option value="${m.id}">${m.name} (${m.qty} متاح - ${fmt(m.price)} ج.م)</option>`).join('');
-  $('saleQty').value = 1;
-  $('saleUnitPrice').value = '';
-  $('saleTotal').value = '';
+  setVal('saleQty', 1);
+  setVal('saleUnitPrice', '');
+  setVal('saleTotal', '');
   renderCart();
 }
 
 function updateSaleTotal() {
-  const id = parseInt($('saleMedSelect').value);
+  const id = parseInt(getVal('saleMedSelect'));
   const med = medications.find(m => m.id === id);
-  const qty = parseInt($('saleQty').value) || 0;
+  const qty = parseInt(getVal('saleQty')) || 0;
   if (med) {
-    $('saleUnitPrice').value = fmt(med.price) + ' ج.م';
-    $('saleTotal').value = fmt(med.price * qty) + ' ج.م';
+    setVal('saleUnitPrice', fmt(med.price) + ' ج.م');
+    setVal('saleTotal', fmt(med.price * qty) + ' ج.م');
   } else {
-    $('saleUnitPrice').value = '';
-    $('saleTotal').value = '';
+    setVal('saleUnitPrice', '');
+    setVal('saleTotal', '');
   }
 }
 
-$('saleMedSelect').addEventListener('change', updateSaleTotal);
-$('saleQty').addEventListener('input', updateSaleTotal);
+on('saleMedSelect', 'change', updateSaleTotal);
+on('saleQty', 'input', updateSaleTotal);
 
-$('addToCartBtn').addEventListener('click', () => {
-  const id = parseInt($('saleMedSelect').value);
-  const qty = parseInt($('saleQty').value);
+on('addToCartBtn', 'click', () => {
+  const id = parseInt(getVal('saleMedSelect'));
+  const qty = parseInt(getVal('saleQty'));
   const med = medications.find(m => m.id === id);
 
   if (!med) { toast('اختر دواء أولاً', 'error'); return; }
@@ -400,8 +406,8 @@ $('addToCartBtn').addEventListener('click', () => {
   }
 
   renderCart();
-  $('saleQty').value = 1;
-  $('saleMedSelect').value = '';
+  setVal('saleQty', 1);
+  setVal('saleMedSelect', '');
   updateSaleTotal();
   toast('تم إضافة المنتج للفاتورة', 'success');
 });
