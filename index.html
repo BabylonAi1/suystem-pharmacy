@@ -4833,256 +4833,365 @@
       transition: background 0.5s var(--ease-smooth), background-color 0.5s var(--ease-smooth), color 0.4s var(--ease-smooth), border-color 0.4s var(--ease-smooth), box-shadow 0.4s var(--ease-smooth), fill 0.4s var(--ease-smooth) !important;
     }
 
-    /* ═══════════════════════════════════════════════════════════════ */
-    /* MOBILE ONLY FIXES — Active only below 1024px. Desktop untouched */
-    /* ═══════════════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════════════════════
+       MOBILE-ONLY LAYOUT — visible only on screens ≤768px.
+       Desktop ≥769px is COMPLETELY untouched.
+       ═══════════════════════════════════════════════════════════════════════ */
+    .mobile-only-layout { display: none; }
 
-    /* ───── Tablet + Mobile (≤1023px) — base mobile layout ───── */
-    @media (max-width: 1023px) {
-      html, body { overflow-x: hidden !important; }
-
-      /* Sidebar already hidden, just enforce */
-      .sidebar { display: none !important; }
-
-      /* Content: full width, comfortable padding, room for dock */
-      .content {
-        margin-right: 0 !important;
-        padding: 28px 20px 130px !important;
-      }
-
-      /* Page header */
-      .page-header {
-        margin-bottom: 22px !important;
-        flex-wrap: wrap !important;
-        gap: 12px !important;
-        align-items: flex-start !important;
-      }
-      .page-header h2 { font-size: 28px !important; line-height: 1.2 !important; }
-      .page-header .subtitle { font-size: 13px !important; margin-top: 4px !important; }
-      .date-badge { font-size: 12px !important; padding: 8px 14px !important; }
-
-      /* Stats: clean 2-column grid */
-      .stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; margin-bottom: 24px !important; }
-      .invoice-stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
-
-      /* Two-column layouts → stack vertically */
-      .dashboard-grid,
-      .sales-grid,
-      .alerts-grid,
-      .reports-grid {
-        grid-template-columns: 1fr !important;
-        gap: 16px !important;
-      }
-
-      /* POS: vertical stack, cart fits content */
-      .pos-layout { grid-template-columns: 1fr !important; gap: 16px !important; }
-      .pos-cart {
-        position: relative !important;
-        top: 0 !important;
-        max-height: none !important;
-        min-height: auto !important;
-        overflow: visible !important;
-        padding: 22px !important;
-      }
-      .pos-products {
-        padding: 22px !important;
-        min-height: auto !important;
-        gap: 16px !important;
-      }
-      .pos-product-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
-        max-height: none !important;
-        gap: 12px !important;
-      }
-      .cart-list { max-height: clamp(220px, 50vh, 460px) !important; }
-
-      /* Modals: fit screen with comfortable margin */
-      .modal-overlay { padding: 14px !important; }
-      .modal {
-        max-width: calc(100vw - 28px) !important;
-        max-height: calc(100vh - 56px) !important;
-        padding: 22px !important;
-        border-radius: 20px !important;
-      }
-      .modal-lg, .modal-details, .confirm-modal {
-        max-width: calc(100vw - 28px) !important;
-      }
-      .modal-details { padding: 0 !important; }
-
-      /* Tables: scroll only within container, not the page */
-      .table-wrapper {
-        overflow-x: auto !important;
-        overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
-        max-height: none !important;
-        border-radius: 14px !important;
-      }
-      .table-wrapper table { min-width: 600px; }
-      th, td { padding: 12px 14px !important; font-size: 13px !important; white-space: nowrap; }
-
-      /* Action buttons in tables: wrap nicely */
-      .actions { flex-wrap: wrap !important; gap: 5px !important; }
-      .actions .btn-icon { padding: 7px 10px !important; font-size: 11.5px !important; }
-
-      /* Filter pills + toolbar */
-      .toolbar, .invoice-toolbar, .activity-controls {
-        flex-wrap: wrap !important;
-        gap: 12px !important;
-        padding: 16px !important;
-      }
-      .filter-pills { gap: 6px !important; flex-wrap: wrap !important; }
-      .pill { padding: 7px 12px !important; font-size: 12px !important; }
-      .search-box { flex: 1 1 100% !important; min-width: 0 !important; max-width: none !important; }
-      .filter-group { flex: 1 1 100% !important; }
-
-      /* Forms: stack rows */
-      .form-row { flex-direction: column !important; gap: 0 !important; }
-      input, select, textarea { font-size: 16px !important; }  /* no iOS zoom */
-
-      /* Floating theme toggle: smaller, edge-safe */
-      .floating-theme-toggle {
-        width: 44px !important;
-        height: 44px !important;
-        top: 14px !important;
-        left: 14px !important;
-        font-size: 18px !important;
-      }
-
-      /* Dock: compact but readable */
-      .dock-outer { bottom: 16px !important; }
-      .dock-panel { gap: 8px !important; padding: 8px 12px !important; }
-      .dock-item { width: 46px !important; height: 46px !important; }
-      .dock-item .dock-icon { font-size: 18px !important; }
-      .dock-label { top: -32px !important; font-size: 11px !important; padding: 4px 9px !important; }
-
-      /* Toast container: spread across top */
-      .toast-container {
-        top: 14px !important;
-        left: 14px !important;
-        right: 14px !important;
-        max-width: none !important;
-      }
-      .toast { min-width: 0 !important; max-width: 100% !important; }
-
-      /* Details modal mobile layout */
-      .details-hero {
-        flex-direction: column !important;
-        align-items: center !important;
-        text-align: center !important;
-        padding: 22px 18px !important;
-      }
-      .details-image { width: 120px !important; height: 120px !important; }
-      .details-price-block { justify-content: center !important; }
-      .details-grid { grid-template-columns: 1fr 1fr !important; padding: 18px !important; gap: 10px !important; }
-      .details-section { padding: 8px 18px !important; }
-      .details-actions {
-        padding: 14px 18px 20px !important;
-        flex-wrap: wrap !important;
-        gap: 8px !important;
-      }
-      .details-actions .btn { flex: 1 1 calc(50% - 4px) !important; padding: 11px 14px !important; font-size: 13px !important; }
-
-      /* Activity timeline mobile */
-      .timeline { padding-right: 24px !important; }
-      .activity-card { padding: 14px 16px !important; gap: 12px !important; }
-      .activity-icon { width: 38px !important; height: 38px !important; font-size: 17px !important; }
-      .timeline-date-header { font-size: 11px !important; padding: 5px 12px 5px 14px !important; }
-
-      /* Empty states */
-      .empty-state-pro { padding: 50px 20px !important; min-height: 260px !important; }
-      .empty-state-pro .empty-icon-wrap { width: 64px !important; height: 64px !important; font-size: 28px !important; }
-    }
-
-    /* ───── Phones (≤768px) ───── */
     @media (max-width: 768px) {
-      .content { padding: 22px 16px 120px !important; }
+      html, body { overflow-x: hidden !important; }
+      /* Hide ALL desktop chrome on mobile */
+      .sidebar,
+      .dock-outer,
+      .floating-theme-toggle,
+      main.content { display: none !important; }
 
-      .page-header h2 { font-size: 24px !important; }
-      .page-header { gap: 10px !important; }
-
-      .stats-grid { gap: 12px !important; }
-      .stat-card { padding: 16px !important; gap: 12px !important; min-height: auto !important; }
-      .stat-icon { width: 44px !important; height: 44px !important; font-size: 19px !important; border-radius: 14px !important; }
-      .stat-info p { font-size: 11.5px !important; }
-      .stat-info h3 { font-size: 26px !important; }
-      .stat-trend { font-size: 10.5px !important; }
-
-      .invoice-stats-grid .stat-card { padding: 14px !important; }
-      .invoice-stats-grid .stat-icon { width: 38px !important; height: 38px !important; font-size: 16px !important; }
-      .invoice-stats-grid .stat-info h3 { font-size: 18px !important; }
-      .invoice-stats-grid .stat-info p { font-size: 10.5px !important; }
-      .invoice-stats-grid .stat-trend { display: none !important; }
-
-      .panel { padding: 18px !important; margin-bottom: 16px !important; }
-      .big-number { font-size: 30px !important; }
-
-      .pos-product-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; gap: 10px !important; }
-      .pos-product-card { padding: 12px !important; }
-      .pos-product-image { height: 76px !important; }
-
-      .modal { padding: 18px !important; border-radius: 18px !important; }
-
-      .dock-panel { gap: 6px !important; padding: 7px 11px !important; }
-      .dock-item { width: 42px !important; height: 42px !important; }
-    }
-
-    /* ───── Narrow phones (≤430px) — iPhone Pro Max, etc. ───── */
-    @media (max-width: 430px) {
-      .content { padding: 18px 12px 110px !important; }
-      .page-header h2 { font-size: 22px !important; }
-
-      /* Stats: still 2 columns but tighter */
-      .stats-grid, .invoice-stats-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 10px !important;
+      /* Show mobile layout */
+      .mobile-only-layout {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background: transparent;
       }
-      .stat-card { padding: 14px !important; gap: 10px !important; }
-      .stat-icon { width: 40px !important; height: 40px !important; font-size: 17px !important; }
-      .stat-info h3 { font-size: 22px !important; }
-      .stat-info p { font-size: 10.5px !important; }
 
-      .invoice-stats-grid .stat-card { padding: 12px !important; }
-      .invoice-stats-grid .stat-info h3 { font-size: 16px !important; }
-
-      .panel { padding: 14px !important; }
-      .modal { padding: 16px !important; }
-      .modal-actions { flex-wrap: wrap !important; gap: 8px !important; }
-      .modal-actions .btn { flex: 1 1 calc(50% - 4px) !important; padding: 10px 12px !important; font-size: 13px !important; }
-
-      .dock-panel { gap: 4px !important; padding: 6px 10px !important; }
-      .dock-item { width: 40px !important; height: 40px !important; }
-      .dock-item .dock-icon { font-size: 17px !important; }
-
-      .floating-theme-toggle {
-        width: 40px !important;
-        height: 40px !important;
-        top: 12px !important;
-        left: 12px !important;
+      /* ───── Top Bar ───── */
+      .m-topbar {
+        position: sticky; top: 0; z-index: 50;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(20px) saturate(1.4);
+        -webkit-backdrop-filter: blur(20px) saturate(1.4);
+        border-bottom: 1px solid var(--border-soft);
       }
+      .m-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+      .m-brand-icon {
+        width: 38px; height: 38px; border-radius: 12px;
+        background: linear-gradient(135deg, var(--pharmacy-green), var(--turquoise, #14b8a6));
+        color: white; display: flex; align-items: center; justify-content: center;
+        font-size: 18px; font-weight: 900;
+        box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.4);
+        flex-shrink: 0;
+      }
+      .m-brand-text { display: flex; flex-direction: column; min-width: 0; }
+      .m-brand-text strong { font-size: 15px; color: var(--text-dark); font-weight: 800; line-height: 1.1; }
+      .m-brand-text span { font-size: 11px; color: var(--text-soft); margin-top: 2px; }
+      .m-icon-btn {
+        width: 42px; height: 42px; border-radius: 12px;
+        border: 1px solid var(--border-strong);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; cursor: pointer; padding: 0;
+        position: relative; flex-shrink: 0;
+      }
+      .m-icon-btn .m-sun, .m-icon-btn .m-moon { position: absolute; transition: opacity 0.4s, transform 0.4s; }
+      .m-icon-btn .m-moon { opacity: 0; transform: rotate(-45deg) scale(0.5); }
+      [data-theme="dark"] .m-icon-btn .m-sun { opacity: 0; transform: rotate(45deg) scale(0.5); }
+      [data-theme="dark"] .m-icon-btn .m-moon { opacity: 1; transform: rotate(0) scale(1); }
+
+      /* ───── Main ───── */
+      .m-main {
+        flex: 1; padding: 16px 14px 88px;
+      }
+      .m-page { display: none; }
+      .m-page.active { display: block; animation: mFade 0.3s ease; }
+      @keyframes mFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+      .m-h1 {
+        font-size: 24px; font-weight: 800; color: var(--text-dark);
+        margin: 0 0 4px; letter-spacing: -0.02em; line-height: 1.2;
+      }
+      .m-sub { font-size: 12.5px; color: var(--text-light); margin: 0 0 18px; font-weight: 500; }
+      .m-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+
+      /* ───── Stat Grid ───── */
+      .m-stat-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        margin: 4px 0 22px;
+      }
+      .m-stat-card {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 14px;
+        display: flex; align-items: center; gap: 10px;
+        box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.08);
+      }
+      .m-stat-card .m-ico {
+        font-size: 20px; width: 38px; height: 38px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      }
+      .m-stat-card.green .m-ico { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+      .m-stat-card.orange .m-ico { background: linear-gradient(135deg, #fed7aa, #fdba74); }
+      .m-stat-card.blue .m-ico { background: linear-gradient(135deg, #bae6fd, #7dd3fc); }
+      .m-stat-card.purple .m-ico { background: linear-gradient(135deg, #ddd6fe, #c4b5fd); }
+      .m-stat-card > div { min-width: 0; }
+      .m-stat-card .lbl { font-size: 10.5px; color: var(--text-light); display: block; font-weight: 700; letter-spacing: -0.005em; }
+      .m-stat-card strong { font-size: 18px; font-weight: 800; color: var(--text-dark); display: block; margin-top: 2px; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+
+      /* ───── Section ───── */
+      .m-section { margin-bottom: 22px; }
+      .m-section h3 {
+        font-size: 14px; font-weight: 700; color: var(--text-mid);
+        margin: 0 0 10px; padding-right: 2px;
+      }
+      .m-section.big {
+        text-align: center; padding: 22px 18px;
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid var(--glass-border);
+        border-radius: 18px;
+      }
+      .m-big-num {
+        font-size: 32px; font-weight: 900; letter-spacing: -0.03em;
+        background: linear-gradient(135deg, var(--pharmacy-green-deep), var(--accent-cyan, #06b6d4));
+        -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        margin-top: 8px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .m-list-box {
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid var(--glass-border);
+        border-radius: 14px;
+        padding: 6px;
+      }
+      .m-list-item {
+        padding: 12px 14px; border-radius: 10px;
+        background: rgba(255, 255, 255, 0.55);
+        margin-bottom: 6px;
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 10px;
+      }
+      .m-list-item:last-child { margin-bottom: 0; }
+      .m-list-item .info { min-width: 0; }
+      .m-list-item .info strong { font-size: 13.5px; color: var(--text-dark); display: block; font-weight: 700; }
+      .m-list-item .info span { font-size: 11px; color: var(--text-light); }
+      .m-list-item .amt { font-size: 12.5px; font-weight: 800; color: var(--pharmacy-green-deep); white-space: nowrap; font-variant-numeric: tabular-nums; }
+      .m-list-empty { padding: 26px 16px; text-align: center; color: var(--text-soft); font-size: 13px; font-weight: 500; }
+
+      /* ───── Search ───── */
+      .m-search-wrap { margin-bottom: 14px; }
+      .m-search {
+        width: 100%; padding: 12px 16px;
+        border: 1px solid var(--border-strong);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        font-family: 'Cairo', sans-serif;
+        font-size: 16px; color: var(--text-dark);
+        box-sizing: border-box;
+      }
+      .m-search:focus { outline: none; border-color: rgba(16,185,129,0.5); box-shadow: 0 0 0 3px rgba(16,185,129,0.12); }
+
+      /* ───── Medicine Cards ───── */
+      .m-cards { display: flex; flex-direction: column; gap: 10px; }
+      .m-card {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(14px);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.07);
+      }
+      .m-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+      .m-card-top > div { min-width: 0; }
+      .m-card-top strong { font-size: 15px; font-weight: 800; color: var(--text-dark); display: block; line-height: 1.3; }
+      .m-card-top .sub { font-size: 12px; color: var(--text-light); }
+      .m-card-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+      .m-meta-pill {
+        font-size: 11px; padding: 4px 10px; border-radius: 999px;
+        background: rgba(16, 185, 129, 0.1); color: var(--pharmacy-green-deep);
+        border: 1px solid rgba(16, 185, 129, 0.22);
+        font-weight: 700; letter-spacing: -0.005em;
+      }
+      .m-meta-pill.warn { background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: rgba(245, 158, 11, 0.22); }
+      .m-meta-pill.danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: rgba(239, 68, 68, 0.22); }
+      .m-meta-pill.ltr { direction: ltr; }
+      .m-card-actions { display: flex; gap: 6px; }
+      .m-card-actions button {
+        flex: 1; padding: 10px 0; border-radius: 10px;
+        font-size: 12px; font-weight: 700;
+        border: 1px solid var(--border-strong);
+        background: rgba(255, 255, 255, 0.65);
+        color: var(--text-mid); cursor: pointer;
+        font-family: 'Cairo', sans-serif;
+      }
+      .m-card-actions button.refill { background: rgba(16, 185, 129, 0.1); color: var(--pharmacy-green-deep); border-color: rgba(16, 185, 129, 0.25); }
+      .m-card-actions button.del { background: rgba(239, 68, 68, 0.08); color: var(--danger); border-color: rgba(239, 68, 68, 0.22); }
+
+      /* ───── POS Grid ───── */
+      .m-pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-bottom: 80px; }
+      .m-pos-card {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(14px);
+        border: 1px solid var(--glass-border);
+        border-radius: 14px;
+        padding: 12px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .m-pos-card:active { transform: scale(0.98); }
+      .m-pos-image { height: 64px; background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(6,182,212,0.1)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 8px; }
+      .m-pos-card strong { font-size: 13px; display: block; color: var(--text-dark); font-weight: 800; line-height: 1.25; }
+      .m-pos-card .company { font-size: 10.5px; color: var(--text-light); margin: 2px 0 6px; }
+      .m-pos-card .price { font-size: 14px; color: var(--pharmacy-green-deep); font-weight: 900; font-variant-numeric: tabular-nums; }
+      .m-pos-card .stock { font-size: 10px; color: var(--text-soft); margin-top: 2px; }
+
+      /* Cart Bar (above bottom nav) */
+      .m-cart-bar {
+        position: fixed; bottom: 70px; left: 12px; right: 12px;
+        z-index: 60;
+        display: none;
+      }
+      .m-cart-bar.active { display: block; animation: mFade 0.3s; }
+      .m-cart-toggle {
+        width: 100%; padding: 12px 16px;
+        background: linear-gradient(135deg, var(--pharmacy-green), var(--turquoise, #14b8a6));
+        color: white;
+        border: none; border-radius: 14px;
+        display: flex; align-items: center; justify-content: space-between;
+        font-family: 'Cairo', sans-serif;
+        font-size: 13px; font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.45);
+      }
+      .m-cart-icon { font-size: 16px; }
+      .m-cart-total { font-weight: 900; font-size: 14px; font-variant-numeric: tabular-nums; }
+
+      /* Cart Drawer */
+      .m-cart-panel {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(28px) saturate(1.5);
+        border-top-left-radius: 22px; border-top-right-radius: 22px;
+        border-top: 1px solid var(--glass-border);
+        padding: 16px;
+        z-index: 110;
+        max-height: 85vh;
+        flex-direction: column;
+        box-shadow: 0 -8px 24px rgba(0,0,0,0.15);
+        display: none;
+        animation: mDrawerUp 0.35s var(--ease-smooth);
+      }
+      .m-cart-panel.open { display: flex; }
+      @keyframes mDrawerUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+      .m-cart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+      .m-cart-header h3 { font-size: 17px; font-weight: 800; color: var(--text-dark); margin: 0; }
+      .m-cart-list { flex: 1; overflow-y: auto; max-height: 50vh; padding: 4px 0; }
+      .m-cart-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-soft); gap: 10px; }
+      .m-cart-row:last-child { border-bottom: none; }
+      .m-cart-row .info strong { font-size: 13px; color: var(--text-dark); display: block; font-weight: 700; }
+      .m-cart-row .info span { font-size: 11px; color: var(--text-light); }
+      .m-cart-row .qty-ctrl { display: flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.04); border-radius: 999px; padding: 3px; }
+      .m-cart-row .qty-ctrl button { width: 28px; height: 28px; border-radius: 50%; border: none; background: white; cursor: pointer; font-weight: 800; font-size: 14px; color: var(--text-dark); }
+      .m-cart-row .qty-ctrl .qval { min-width: 22px; text-align: center; font-weight: 800; font-size: 13px; }
+      .m-cart-summary { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-strong); }
+      .m-sum-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; color: var(--text-mid); font-weight: 600; }
+      .m-sum-row strong { color: var(--pharmacy-green-deep); font-weight: 900; font-size: 20px; font-variant-numeric: tabular-nums; }
+
+      /* Buttons */
+      .m-btn {
+        border-radius: 11px; border: none;
+        font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 14px;
+        cursor: pointer; padding: 10px 16px;
+      }
+      .m-btn-primary {
+        background: linear-gradient(135deg, var(--pharmacy-green), var(--turquoise, #14b8a6));
+        color: white;
+        width: 40px; height: 40px;
+        padding: 0; font-size: 22px; font-weight: 900;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.4);
+        display: flex; align-items: center; justify-content: center;
+      }
+      .m-btn-success {
+        background: linear-gradient(135deg, var(--pharmacy-green), #047857);
+        color: white;
+        padding: 14px 18px; font-size: 15px; font-weight: 800;
+        border-radius: 12px;
+        box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.4);
+        margin-top: 12px;
+      }
+      .m-btn-full { width: 100%; }
+
+      /* ───── Bottom Navigation ───── */
+      .m-bottom-nav {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        z-index: 70;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: stretch !important;
+        gap: 0 !important;
+        flex: 0 0 auto !important;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(24px) saturate(1.5);
+        border-top: 1px solid var(--border-soft);
+        padding: 6px 4px calc(8px + env(safe-area-inset-bottom, 0px));
+      }
+      .m-nav-btn {
+        flex: 1; min-width: 0;
+        display: flex; flex-direction: column; align-items: center; gap: 2px;
+        padding: 8px 4px;
+        border: none; background: transparent;
+        font-family: 'Cairo', sans-serif;
+        cursor: pointer;
+        color: var(--text-light);
+        position: relative;
+      }
+      .m-nav-btn .m-nav-ico { font-size: 19px; line-height: 1; }
+      .m-nav-btn .m-nav-label { font-size: 10px; font-weight: 600; letter-spacing: -0.01em; }
+      .m-nav-btn.active { color: var(--pharmacy-green-deep); }
+      .m-nav-btn.active::before {
+        content: ''; position: absolute; top: 0; left: 28%; right: 28%; height: 3px;
+        background: linear-gradient(90deg, var(--pharmacy-green), var(--turquoise, #14b8a6));
+        border-radius: 0 0 4px 4px;
+      }
+      .m-nav-badge {
+        position: absolute; top: 4px; right: calc(50% - 22px);
+        background: var(--danger); color: white;
+        font-size: 9px; font-weight: 800;
+        padding: 1px 5px; border-radius: 999px;
+        min-width: 14px; text-align: center;
+        box-shadow: 0 2px 6px rgba(239,68,68,0.5);
+      }
+      .m-nav-badge[data-empty="true"] { display: none; }
+
+      /* ───── Dark mode ───── */
+      [data-theme="dark"] .m-topbar { background: rgba(10, 15, 26, 0.82); border-bottom-color: rgba(255,255,255,0.06); }
+      [data-theme="dark"] .m-icon-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+      [data-theme="dark"] .m-stat-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
+      [data-theme="dark"] .m-stat-card.green .m-ico { background: linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.15)); }
+      [data-theme="dark"] .m-stat-card.orange .m-ico { background: linear-gradient(135deg, rgba(245,158,11,0.25), rgba(245,158,11,0.15)); }
+      [data-theme="dark"] .m-stat-card.blue .m-ico { background: linear-gradient(135deg, rgba(6,182,212,0.25), rgba(6,182,212,0.15)); }
+      [data-theme="dark"] .m-stat-card.purple .m-ico { background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(139,92,246,0.15)); }
+      [data-theme="dark"] .m-list-box { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.06); }
+      [data-theme="dark"] .m-list-item { background: rgba(255,255,255,0.03); }
+      [data-theme="dark"] .m-section.big { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.07); }
+      [data-theme="dark"] .m-search { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); color: var(--text-dark); }
+      [data-theme="dark"] .m-card { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.06); }
+      [data-theme="dark"] .m-card-actions button { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); color: var(--text-light); }
+      [data-theme="dark"] .m-card-actions button.refill { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.3); color: var(--pharmacy-green-deep); }
+      [data-theme="dark"] .m-card-actions button.del { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: var(--danger); }
+      [data-theme="dark"] .m-pos-card { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.06); }
+      [data-theme="dark"] .m-cart-panel { background: rgba(10, 15, 26, 0.96); border-top-color: rgba(255,255,255,0.08); }
+      [data-theme="dark"] .m-cart-row .qty-ctrl { background: rgba(255,255,255,0.06); }
+      [data-theme="dark"] .m-cart-row .qty-ctrl button { background: rgba(255,255,255,0.1); color: var(--text-dark); }
+      [data-theme="dark"] .m-bottom-nav { background: rgba(10, 15, 26, 0.92); border-top-color: rgba(255,255,255,0.06); }
     }
 
-    /* ───── Very narrow (≤360px) — small Android phones ───── */
-    @media (max-width: 360px) {
-      .content { padding: 14px 10px 100px !important; }
-      .page-header h2 { font-size: 20px !important; }
-      .stats-grid, .invoice-stats-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
-      .stat-card { padding: 12px !important; gap: 8px !important; }
-      .stat-icon { width: 36px !important; height: 36px !important; font-size: 15px !important; }
-      .stat-info h3 { font-size: 20px !important; }
-      .stat-info p { font-size: 10px !important; }
-      .invoice-stats-grid .stat-info h3 { font-size: 15px !important; }
-      .dock-panel { gap: 3px !important; padding: 5px 8px !important; }
-      .dock-item { width: 36px !important; height: 36px !important; }
-      .pos-product-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important; }
-    }
-
-    /* ───── Tablet landscape clean-up (768-1023px) ───── */
-    @media (min-width: 768px) and (max-width: 1023px) {
-      .content { padding: 32px 24px 130px !important; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
-      .invoice-stats-grid { grid-template-columns: repeat(3, 1fr) !important; }
-      .pos-product-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important; }
-      .page-header h2 { font-size: 30px !important; }
+    /* Smaller screens (≤420px) */
+    @media (max-width: 420px) {
+      .m-h1 { font-size: 22px; }
+      .m-stat-card { padding: 12px; gap: 8px; }
+      .m-stat-card .m-ico { width: 34px; height: 34px; font-size: 17px; }
+      .m-stat-card strong { font-size: 16px; }
+      .m-stat-card .lbl { font-size: 10px; }
     }
   </style>
 </head>
@@ -5462,10 +5571,6 @@
           <h2>الفواتير</h2>
           <p class="subtitle">إدارة وعرض جميع فواتير المبيعات</p>
         </div>
-        <button class="btn btn-danger-soft" id="clearAllInvoicesBtn" disabled>
-          <svg class="lucide" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="m19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-          تفريغ الفواتير
-        </button>
       </header>
 
       <div class="stats-grid invoice-stats-grid">
@@ -5564,6 +5669,135 @@
       </div>
     </section>
   </main>
+
+  <!-- ═════════════════════ MOBILE LAYOUT (visible only ≤768px) ═════════════════════
+       يستخدم نفس بيانات Desktop (medications/invoices/cart) ونفس API/Cloudflare D1.
+       لا يؤثر على Desktop إطلاقاً. -->
+  <div id="mobileLayout" class="mobile-only-layout" dir="rtl">
+    <!-- Top Bar -->
+    <header class="m-topbar">
+      <div class="m-brand">
+        <div class="m-brand-icon">℞</div>
+        <div class="m-brand-text">
+          <strong>صيدليتي</strong>
+          <span>نظام الإدارة</span>
+        </div>
+      </div>
+      <button class="m-icon-btn" id="mThemeBtn" aria-label="تبديل المظهر">
+        <span class="m-sun">☀️</span>
+        <span class="m-moon">🌙</span>
+      </button>
+    </header>
+
+    <main class="m-main">
+      <section class="m-page active" data-mpage="dashboard">
+        <h1 class="m-h1">لوحة التحكم</h1>
+        <p class="m-sub" id="mTodayDate"></p>
+        <div class="m-stat-grid">
+          <div class="m-stat-card green"><span class="m-ico">💊</span><div><span class="lbl">عدد الأدوية</span><strong id="mStatMeds">0</strong></div></div>
+          <div class="m-stat-card orange"><span class="m-ico">⏰</span><div><span class="lbl">قارب على الانتهاء</span><strong id="mStatExpiring">0</strong></div></div>
+          <div class="m-stat-card blue"><span class="m-ico">💰</span><div><span class="lbl">مبيعات اليوم</span><strong id="mStatSales">0 د.ع</strong></div></div>
+          <div class="m-stat-card purple"><span class="m-ico">🧾</span><div><span class="lbl">عدد الفواتير</span><strong id="mStatInvoices">0</strong></div></div>
+        </div>
+        <div class="m-section">
+          <h3>أحدث المبيعات</h3>
+          <div id="mRecentSales" class="m-list-box"></div>
+        </div>
+        <div class="m-section">
+          <h3>تنبيهات مهمة</h3>
+          <div id="mDashboardAlerts" class="m-list-box"></div>
+        </div>
+      </section>
+
+      <section class="m-page" data-mpage="medications">
+        <div class="m-header-row">
+          <h1 class="m-h1">الأدوية</h1>
+          <button class="m-btn m-btn-primary" id="mAddMedBtn" aria-label="إضافة دواء">+</button>
+        </div>
+        <div class="m-search-wrap">
+          <input type="search" id="mSearchMed" class="m-search" placeholder="ابحث بالاسم أو الشركة أو الباركود..." />
+        </div>
+        <div id="mMedList" class="m-cards"></div>
+      </section>
+
+      <section class="m-page" data-mpage="sales">
+        <h1 class="m-h1">نقاط البيع</h1>
+        <div class="m-search-wrap">
+          <input type="search" id="mPosSearch" class="m-search" placeholder="ابحث عن دواء..." />
+        </div>
+        <div id="mPosGrid" class="m-pos-grid"></div>
+        <div class="m-cart-bar" id="mCartBar">
+          <button class="m-cart-toggle" id="mCartToggle">
+            <span><span class="m-cart-icon">🛒</span> السلة (<span id="mCartCount">0</span>)</span>
+            <span class="m-cart-total" id="mCartTotal">0 د.ع</span>
+          </button>
+        </div>
+        <div class="m-cart-panel" id="mCartPanel">
+          <div class="m-cart-header">
+            <h3>الفاتورة الحالية</h3>
+            <button class="m-icon-btn" id="mCartClose" aria-label="إغلاق">✕</button>
+          </div>
+          <div id="mCartList" class="m-cart-list"></div>
+          <div class="m-cart-summary">
+            <div class="m-sum-row"><span>الإجمالي</span><strong id="mCartTotal2">0 د.ع</strong></div>
+            <button class="m-btn m-btn-success m-btn-full" id="mCheckoutBtn">💳 إصدار الفاتورة</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="m-page" data-mpage="alerts">
+        <h1 class="m-h1">التنبيهات</h1>
+        <div class="m-section">
+          <h3>⏰ قاربت على الانتهاء</h3>
+          <div id="mExpiringAlerts" class="m-list-box"></div>
+        </div>
+        <div class="m-section">
+          <h3>📉 مخزون منخفض</h3>
+          <div id="mLowStockAlerts" class="m-list-box"></div>
+        </div>
+      </section>
+
+      <section class="m-page" data-mpage="reports">
+        <h1 class="m-h1">التقارير</h1>
+        <div class="m-section big">
+          <h3>💵 أرباح اليوم</h3>
+          <div class="m-big-num" id="mDailyProfit">0 د.ع</div>
+        </div>
+        <div class="m-section">
+          <h3>🏆 الأكثر مبيعاً</h3>
+          <div id="mTopMed" class="m-list-box"></div>
+        </div>
+        <div class="m-section">
+          <h3>❌ نفد المخزون</h3>
+          <div id="mOutOfStock" class="m-list-box"></div>
+        </div>
+      </section>
+
+      <section class="m-page" data-mpage="invoices">
+        <h1 class="m-h1">الفواتير</h1>
+        <div id="mInvoicesList" class="m-cards"></div>
+      </section>
+    </main>
+
+    <nav class="m-bottom-nav">
+      <button class="m-nav-btn active" data-mpage="dashboard">
+        <span class="m-nav-ico">🏠</span><span class="m-nav-label">الرئيسية</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="medications">
+        <span class="m-nav-ico">💊</span><span class="m-nav-label">أدوية</span>
+      </button>
+      <button class="m-nav-btn m-nav-primary" data-mpage="sales">
+        <span class="m-nav-ico">🛒</span><span class="m-nav-label">بيع</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="alerts">
+        <span class="m-nav-ico">🔔</span><span class="m-nav-label">تنبيهات</span>
+        <span class="m-nav-badge" id="mNavAlertsBadge" data-empty="true">0</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="invoices">
+        <span class="m-nav-ico">🧾</span><span class="m-nav-label">فواتير</span>
+      </button>
+    </nav>
+  </div>
 
   <!-- نموذج إضافة/تعديل دواء -->
   <div class="modal-overlay" id="medModal">
@@ -7279,7 +7513,7 @@
 
     function renderInvoices() {
       const body = $('invoicesBody');
-      const clearBtn = $('clearAllInvoicesBtn');
+      const clearBtn = $('clearAllInvoicesBtn'); // removed from UI — safe null-check below
 
       // Summary stats (always reflect ALL invoices, not just filtered)
       const total = invoices.length;
@@ -7294,7 +7528,7 @@
       $('statActiveRevenue').innerHTML = formatCurrencyIQD(activeRevenue);
       $('statRefundedTotal').innerHTML = formatCurrencyIQD(refundedTotal);
 
-      clearBtn.disabled = total === 0;
+      if (clearBtn) clearBtn.disabled = total === 0;
 
       const filtered = filterInvoiceList().slice().reverse();
 
@@ -7545,25 +7779,7 @@
       }
     });
 
-    $('clearAllInvoicesBtn').addEventListener('click', () => {
-      if (invoices.length === 0) return;
-      const count = invoices.length;
-      showConfirmModal({
-        title: 'تفريغ جميع الفواتير',
-        message: 'هل أنت متأكد من حذف جميع الفواتير؟ هذا الإجراء لا يمكن التراجع عنه.',
-        confirmText: 'تفريغ الفواتير',
-        onConfirm: () => {
-          invoices = [];
-          saveInvoices();
-          renderInvoices();
-          logActivity('med_deleted', 'تفريغ الفواتير',
-            `تم تفريغ جميع الفواتير (${fmt(count)} فاتورة)`,
-            { count }
-          );
-          toast({ title: 'تم التفريغ', message: 'تم تفريغ جميع الفواتير', type: 'success' });
-        }
-      });
-    });
+    // (تم إزالة زر "تفريغ الفواتير" — لا حاجة لمعالج النقر)
 
     // ============== إعادة ملء المخزون ==============
     let refillingMedId = null;
@@ -7986,6 +8202,419 @@
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') refreshFromCloud({ silent: true, render: true });
     });
+  </script>
+
+  <!-- ═════════════════════ MOBILE LAYOUT CONTROLLER ═════════════════════
+       يستخدم نفس البيانات (medications/invoices/cart) ونفس API. Desktop غير مُتأثّر. -->
+  <script>
+  (function () {
+    const mobileLayout = document.getElementById('mobileLayout');
+    if (!mobileLayout) return;
+    const mQ = (sel) => mobileLayout.querySelector(sel);
+    const mQA = (sel) => Array.from(mobileLayout.querySelectorAll(sel));
+    const $m = (id) => document.getElementById(id);
+
+    function isMobile() { return window.matchMedia('(max-width: 768px)').matches; }
+    function fmtMoney(n) { return `${(Number(n) || 0).toLocaleString('en-US')} د.ع`; }
+    function fmtNum(n)   { return (Number(n) || 0).toLocaleString('en-US'); }
+    function mDaysUntil(date) {
+      if (!date) return Infinity;
+      const t = new Date(); t.setHours(0,0,0,0);
+      return Math.floor((new Date(date) - t) / (1000*60*60*24));
+    }
+    function todayKey() { return new Date().toISOString().slice(0, 10); }
+
+    let activePage = 'dashboard';
+
+    // ───── Page switching ─────
+    function switchPage(page) {
+      activePage = page;
+      mQA('.m-page').forEach(p => p.classList.toggle('active', p.dataset.mpage === page));
+      mQA('.m-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.mpage === page));
+      // Sync hidden desktop nav-btn (so app.js state + activity log stays correct)
+      const desktopBtn = document.querySelector(`.nav-btn[data-page="${page}"]`);
+      if (desktopBtn) {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        desktopBtn.classList.add('active');
+      }
+      render(page);
+    }
+
+    mQA('.m-nav-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const page = btn.dataset.mpage;
+        switchPage(page);
+        // Refresh shared data from D1 API (same functions Desktop uses)
+        try {
+          if (typeof refreshMedicines === 'function') await refreshMedicines({ silent: true });
+          if (typeof refreshInvoices === 'function') await refreshInvoices({ silent: true });
+        } catch (e) {}
+        render(page);
+      });
+    });
+
+    // ───── Theme Toggle ─────
+    mQ('#mThemeBtn').addEventListener('click', () => {
+      const root = document.documentElement;
+      const isDark = root.getAttribute('data-theme') === 'dark';
+      const next = isDark ? 'light' : 'dark';
+      document.body.classList.add('theme-transitioning');
+      if (next === 'dark') root.setAttribute('data-theme', 'dark');
+      else root.removeAttribute('data-theme');
+      try { localStorage.setItem('theme', next); } catch(e){}
+      setTimeout(() => document.body.classList.remove('theme-transitioning'), 550);
+    });
+
+    // ───── Data accessors (read shared globals from app.js) ─────
+    function meds()    { return Array.isArray(window.medications) ? window.medications : (typeof medications !== 'undefined' ? medications : []); }
+    function invs()    { return Array.isArray(window.invoices) ? window.invoices : (typeof invoices !== 'undefined' ? invoices : []); }
+    function cartArr() { return Array.isArray(window.cart) ? window.cart : (typeof cart !== 'undefined' ? cart : []); }
+
+    // ───── Renders ─────
+    function renderDashboard() {
+      const M = meds(), I = invs();
+      const today = todayKey();
+      const todaySales = I.filter(i => (i.date || '').startsWith(today));
+      const dailyTotal = todaySales.reduce((s,i) => s + (Number(i.total) || 0), 0);
+      const expiring = M.filter(m => { const d = mDaysUntil(m.expiry); return d >= 0 && d <= 30; });
+      const lowStock = M.filter(m => m.qty > 0 && m.qty <= 10);
+
+      $m('mStatMeds').textContent      = fmtNum(M.length);
+      $m('mStatExpiring').textContent  = fmtNum(expiring.length);
+      $m('mStatSales').textContent     = fmtMoney(dailyTotal);
+      $m('mStatInvoices').textContent  = fmtNum(I.length);
+
+      $m('mTodayDate').textContent = new Date().toLocaleDateString('ar-EG', {
+        weekday:'long', year:'numeric', month:'long', day:'numeric'
+      });
+
+      const recentBox = $m('mRecentSales');
+      const recent = I.slice().reverse().slice(0, 5);
+      if (recent.length === 0) {
+        recentBox.innerHTML = '<div class="m-list-empty">لا توجد مبيعات بعد</div>';
+      } else {
+        recentBox.innerHTML = recent.map(inv => `
+          <div class="m-list-item">
+            <div class="info">
+              <strong>فاتورة #${inv.id}</strong>
+              <span>${(inv.items || []).length} منتجات</span>
+            </div>
+            <div class="amt">${fmtMoney(inv.total)}</div>
+          </div>
+        `).join('');
+      }
+
+      const alertsBox = $m('mDashboardAlerts');
+      const all = [
+        ...expiring.slice(0, 3).map(m => ({ med:m, label: `ينتهي خلال ${mDaysUntil(m.expiry)} يوم` })),
+        ...lowStock.slice(0, 3).map(m => ({ med:m, label: `متبقي: ${m.qty}` })),
+      ];
+      if (all.length === 0) {
+        alertsBox.innerHTML = '<div class="m-list-empty">لا توجد تنبيهات حالياً</div>';
+      } else {
+        alertsBox.innerHTML = all.map(a => `
+          <div class="m-list-item">
+            <div class="info">
+              <strong>${a.med.name}</strong>
+              <span>${a.med.company || ''}</span>
+            </div>
+            <div class="amt">${a.label}</div>
+          </div>
+        `).join('');
+      }
+
+      const totalA = expiring.length + lowStock.length;
+      const badge = $m('mNavAlertsBadge');
+      if (badge) { badge.textContent = totalA; badge.dataset.empty = totalA === 0 ? 'true' : 'false'; }
+    }
+
+    function renderMedications() {
+      const M = meds();
+      const term = ($m('mSearchMed').value || '').toLowerCase().trim();
+      const filtered = M.filter(m => !term ||
+        (m.name || '').toLowerCase().includes(term) ||
+        (m.company || '').toLowerCase().includes(term) ||
+        (m.barcode || '').includes(term)
+      );
+      const box = $m('mMedList');
+      if (filtered.length === 0) {
+        box.innerHTML = '<div class="m-list-empty">لا توجد أدوية</div>';
+        return;
+      }
+      box.innerHTML = filtered.map(m => {
+        const d = mDaysUntil(m.expiry);
+        const expClass = d < 0 ? 'danger' : (d <= 30 ? 'warn' : '');
+        const expLbl   = d < 0 ? 'منتهي'  : (d <= 30 ? `${d} يوم` : 'صالح');
+        const qtyClass = m.qty === 0 ? 'danger' : (m.qty <= 10 ? 'warn' : '');
+        return `
+          <div class="m-card">
+            <div class="m-card-top">
+              <div>
+                <strong>${m.name}</strong>
+                <span class="sub">${m.company || ''}</span>
+              </div>
+              <div style="text-align:left;">
+                <strong style="color: var(--pharmacy-green-deep);">${fmtMoney(m.price)}</strong>
+              </div>
+            </div>
+            <div class="m-card-meta">
+              <span class="m-meta-pill ${qtyClass}">الكمية: ${m.qty}</span>
+              <span class="m-meta-pill ${expClass}">${expLbl}</span>
+              ${m.barcode ? `<span class="m-meta-pill ltr">${m.barcode}</span>` : ''}
+            </div>
+            <div class="m-card-actions">
+              <button onclick="if(window.editMed)editMed(${m.id})">✏️ تعديل</button>
+              <button class="refill" onclick="if(window.openRefillModal)openRefillModal(${m.id})">➕ إعادة ملء</button>
+              <button class="del" onclick="if(window.deleteMed)deleteMed(${m.id})">🗑️ حذف</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderSales() {
+      const M = meds();
+      const term = ($m('mPosSearch').value || '').toLowerCase().trim();
+      const available = M.filter(m => {
+        if (m.qty <= 0) return false;
+        if (!term) return true;
+        return (m.name || '').toLowerCase().includes(term) ||
+               (m.company || '').toLowerCase().includes(term) ||
+               (m.barcode || '').includes(term);
+      });
+      const grid = $m('mPosGrid');
+      if (available.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1 / -1;" class="m-list-empty">لا توجد منتجات</div>';
+      } else {
+        grid.innerHTML = available.map(m => `
+          <div class="m-pos-card" data-id="${m.id}">
+            <div class="m-pos-image">💊</div>
+            <strong>${m.name}</strong>
+            <div class="company">${m.company || ''}</div>
+            <div class="price">${fmtMoney(m.price)}</div>
+            <div class="stock">متاح: ${m.qty}</div>
+          </div>
+        `).join('');
+        grid.querySelectorAll('.m-pos-card').forEach(card => {
+          card.addEventListener('click', () => mAddToCart(Number(card.dataset.id)));
+        });
+      }
+      renderCart();
+    }
+
+    function renderCart() {
+      const C = cartArr();
+      const bar = $m('mCartBar');
+      const cnt = $m('mCartCount');
+      const total = C.reduce((s,i) => s + i.qty * i.price, 0);
+      const tQty = C.reduce((s,i) => s + i.qty, 0);
+
+      if (!bar) return;
+      if (C.length === 0) {
+        bar.classList.remove('active');
+        $m('mCartTotal').textContent  = fmtMoney(0);
+        $m('mCartTotal2').textContent = fmtMoney(0);
+        if (cnt) cnt.textContent = '0';
+        $m('mCartList').innerHTML = '<div class="m-list-empty">السلة فارغة</div>';
+        return;
+      }
+      bar.classList.add('active');
+      cnt.textContent = tQty;
+      $m('mCartTotal').textContent  = fmtMoney(total);
+      $m('mCartTotal2').textContent = fmtMoney(total);
+
+      $m('mCartList').innerHTML = C.map(item => `
+        <div class="m-cart-row">
+          <div class="info">
+            <strong>${item.name}</strong>
+            <span>${fmtMoney(item.price)} × ${item.qty}</span>
+          </div>
+          <div class="qty-ctrl">
+            <button onclick="window.__mDec(${item.id})">−</button>
+            <span class="qval">${item.qty}</span>
+            <button onclick="window.__mInc(${item.id})">+</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function mAddToCart(id) {
+      const med = meds().find(m => m.id === id);
+      if (!med || med.qty <= 0) return;
+      const C = cartArr();
+      const existing = C.find(c => c.id === id);
+      if (existing) {
+        if (existing.qty < med.qty) existing.qty += 1;
+      } else {
+        C.push({ id: med.id, name: med.name, price: med.price, qty: 1 });
+      }
+      renderCart();
+    }
+    window.__mInc = function(id) {
+      const med = meds().find(m => m.id === id);
+      const item = cartArr().find(c => c.id === id);
+      if (item && med && item.qty < med.qty) item.qty += 1;
+      renderCart();
+    };
+    window.__mDec = function(id) {
+      const C = cartArr();
+      const item = C.find(c => c.id === id);
+      if (!item) return;
+      item.qty -= 1;
+      if (item.qty <= 0) {
+        const idx = C.indexOf(item);
+        if (idx >= 0) C.splice(idx, 1);
+      }
+      renderCart();
+    };
+
+    // Cart drawer
+    mQ('#mCartToggle').addEventListener('click', () => mQ('#mCartPanel').classList.add('open'));
+    mQ('#mCartClose').addEventListener('click', () => mQ('#mCartPanel').classList.remove('open'));
+
+    // Checkout — delegate to desktop's finishInvoiceBtn (uses same API + same logic)
+    mQ('#mCheckoutBtn').addEventListener('click', () => {
+      mQ('#mCartPanel').classList.remove('open');
+      const btn = document.getElementById('finishInvoiceBtn');
+      if (btn) btn.click();
+      setTimeout(() => {
+        if (typeof refreshAll === 'function') refreshAll({ silent: true }).then(() => {
+          renderDashboard(); renderSales();
+        });
+      }, 600);
+    });
+
+    // Add medicine
+    mQ('#mAddMedBtn').addEventListener('click', () => {
+      const btn = document.getElementById('openAddMedBtn');
+      if (btn) btn.click();
+    });
+
+    // Search live
+    mQ('#mSearchMed').addEventListener('input', renderMedications);
+    mQ('#mPosSearch').addEventListener('input', renderSales);
+
+    function renderAlerts() {
+      const M = meds();
+      const expiring = M.filter(m => { const d = mDaysUntil(m.expiry); return d >= 0 && d <= 30; })
+        .sort((a,b) => mDaysUntil(a.expiry) - mDaysUntil(b.expiry));
+      const low = M.filter(m => m.qty > 0 && m.qty <= 10).sort((a,b) => a.qty - b.qty);
+
+      const expBox = $m('mExpiringAlerts');
+      if (expiring.length === 0) {
+        expBox.innerHTML = '<div class="m-list-empty">لا توجد أدوية قاربت على الانتهاء</div>';
+      } else {
+        expBox.innerHTML = expiring.map(m => `
+          <div class="m-list-item">
+            <div class="info"><strong>${m.name}</strong><span>${m.company||''} · الكمية: ${m.qty}</span></div>
+            <div class="amt">${mDaysUntil(m.expiry)} يوم</div>
+          </div>
+        `).join('');
+      }
+      const lowBox = $m('mLowStockAlerts');
+      if (low.length === 0) {
+        lowBox.innerHTML = '<div class="m-list-empty">لا توجد أدوية بمخزون منخفض</div>';
+      } else {
+        lowBox.innerHTML = low.map(m => `
+          <div class="m-list-item">
+            <div class="info"><strong>${m.name}</strong><span>${m.company||''}</span></div>
+            <div class="amt">متبقي: ${m.qty}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function renderReports() {
+      const M = meds(), I = invs();
+      const today = todayKey();
+      const todayInvoices = I.filter(i => (i.date||'').startsWith(today));
+      const profit = todayInvoices.reduce((s,i) => s + (Number(i.total)||0), 0);
+      $m('mDailyProfit').textContent = fmtMoney(profit);
+
+      const salesMap = {};
+      I.forEach(inv => {
+        (inv.items||[]).forEach(item => {
+          if (!salesMap[item.id]) salesMap[item.id] = { name: item.name, qty: 0 };
+          salesMap[item.id].qty += item.qty;
+        });
+      });
+      const top = Object.values(salesMap).sort((a,b)=>b.qty-a.qty)[0];
+      const topBox = $m('mTopMed');
+      topBox.innerHTML = top
+        ? `<div class="m-list-item"><div class="info"><strong>${top.name}</strong></div><div class="amt">${top.qty} وحدة</div></div>`
+        : '<div class="m-list-empty">لم تُسجَّل مبيعات بعد</div>';
+
+      const out = M.filter(m => m.qty === 0);
+      const outBox = $m('mOutOfStock');
+      if (out.length === 0) {
+        outBox.innerHTML = '<div class="m-list-empty">جميع الأدوية متوفرة</div>';
+      } else {
+        outBox.innerHTML = out.map(m => `<div class="m-list-item"><div class="info"><strong>${m.name}</strong><span>${m.company||''}</span></div><div class="amt">نفد</div></div>`).join('');
+      }
+    }
+
+    function renderInvoices() {
+      const I = invs();
+      const box = $m('mInvoicesList');
+      if (I.length === 0) {
+        box.innerHTML = '<div class="m-list-empty">لا توجد فواتير</div>';
+        return;
+      }
+      box.innerHTML = I.slice().reverse().map(inv => `
+        <div class="m-card" onclick="if(window.viewInvoice)viewInvoice(${inv.id})">
+          <div class="m-card-top">
+            <div>
+              <strong>فاتورة #${inv.id}</strong>
+              <span class="sub">${new Date(inv.date).toLocaleString('ar-EG')}</span>
+            </div>
+            <strong style="color: var(--pharmacy-green-deep);">${fmtMoney(inv.total)}</strong>
+          </div>
+          <div class="m-card-meta">
+            <span class="m-meta-pill">${(inv.items||[]).length} أصناف</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function render(page) {
+      if (!isMobile()) return;
+      if (page === 'dashboard')   renderDashboard();
+      else if (page === 'medications') renderMedications();
+      else if (page === 'sales')        renderSales();
+      else if (page === 'alerts')       renderAlerts();
+      else if (page === 'reports')      renderReports();
+      else if (page === 'invoices')     renderInvoices();
+    }
+
+    // Hook into shared refresh cycle so mobile updates whenever desktop's data refreshes
+    function wrapRefresh(name) {
+      const orig = window[name];
+      if (typeof orig !== 'function') return;
+      window[name] = async function(...args) {
+        const r = await orig.apply(this, args);
+        if (isMobile()) render(activePage);
+        return r;
+      };
+    }
+    wrapRefresh('refreshAll');
+    wrapRefresh('refreshMedicines');
+    wrapRefresh('refreshInvoices');
+    wrapRefresh('refreshFromCloud');
+
+    // Initial render attempts (give app.js time to load data)
+    function tryRender() { if (isMobile()) render(activePage); }
+    document.addEventListener('DOMContentLoaded', tryRender);
+    setTimeout(tryRender, 200);
+    setTimeout(tryRender, 1200);
+    setTimeout(tryRender, 2500);
+
+    // Re-render when crossing the 768px boundary
+    let last = isMobile();
+    window.addEventListener('resize', () => {
+      const now = isMobile();
+      if (now !== last) { last = now; if (now) render(activePage); }
+    });
+  })();
   </script>
 </body>
 </html>
