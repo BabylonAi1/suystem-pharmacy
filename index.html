@@ -1278,26 +1278,26 @@
     }
     /* ═════════════════════ POS SYSTEM ═════════════════════ */
     /* Two-column layout: products (flex) + cart (fixed-ish).
-       minmax(0, 1fr) prevents grid blowout from oversized children (long names,
-       images, etc.). clamp() lets the cart shrink gracefully on smaller laptops. */
+       No `overflow: hidden` on the layout — that would block the page's mouse-
+       wheel scrolling. The page handles vertical scroll; the cart can scroll
+       internally only when its content really overflows. */
     .pos-layout {
       display: grid;
       grid-template-columns: minmax(0, 1fr) clamp(320px, 28vw, 400px);
       gap: 20px;
-      align-items: stretch;
+      align-items: start;
       width: 100%;
       max-width: 100%;
-      overflow: hidden; /* clip any rogue child overflow (prevents horizontal scroll) */
+      /* No overflow rule here — let the page scroll handle it naturally. */
     }
-    /* Products column — allowed to grow/shrink; min-width:0 is the standard fix
-       for grid items containing wide content (images, badges, long text). */
+    /* Products column — min-width:0 is the standard fix for grid items
+       containing wide content (images, badges, long text). */
     .pos-products {
       padding: 28px;
       display: flex;
       flex-direction: column;
       gap: 20px;
-      min-width: 0;            /* prevent column blowout */
-      min-height: 0;
+      min-width: 0;
     }
     .pos-search {
       position: relative;
@@ -1355,18 +1355,13 @@
       letter-spacing: -0.01em;
     }
     .pos-search-hint:empty { display: none; }
-    /* Product grid — flexes within the products column.
-       flex: 1 + min-height: 0 lets it consume remaining height and own its scroll. */
+    /* Product grid — flows on the page (no internal scroll). The page scroll
+       handles vertical navigation, so the mouse wheel always works anywhere. */
     .pos-product-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 16px;
-      flex: 1 1 auto;
-      min-height: 320px;
-      overflow-y: auto;
-      overflow-x: hidden;
       padding: 4px 2px;
-      overscroll-behavior: contain;
     }
     .pos-product-card {
       position: relative;
@@ -1518,9 +1513,10 @@
     .pos-empty-results p { font-size: 14px; font-weight: 700; color: var(--text-light); margin-bottom: 4px; }
     .pos-empty-results span { font-size: 12px; color: var(--text-soft); }
 
-    /* Cart panel — sticky, fixed-ish width column. Own scroll, never overlaps
-       products because both columns live inside the same CSS grid track.
-       top: 130px clears the GooeyNav (height ~54 + 20 top margin + ~36 gap). */
+    /* Cart panel — sticky on the side. NO overflow:hidden on the panel itself
+       (that would block the page's wheel scroll when the cursor is over it).
+       The cart-items list keeps its own internal scroll for very long carts,
+       but lets the wheel bubble back to the page at top/bottom edges. */
     .pos-cart {
       position: sticky;
       top: 130px;
@@ -1529,19 +1525,17 @@
       flex-direction: column;
       gap: 18px;
       min-width: 0;
-      max-height: calc(100vh - 160px); /* viewport-fit; works at any zoom level */
-      overflow: hidden;                /* outer wrapper does not scroll */
-      overscroll-behavior: contain;
-      scrollbar-gutter: stable;
-      align-self: start;               /* important: sticky needs start alignment */
+      max-height: calc(100vh - 160px); /* keeps the sticky panel inside viewport */
+      align-self: start;               /* required for sticky inside a grid track */
+      /* No `overflow: hidden` here — wheel events must reach the page. */
     }
-    /* Cart list owns its own scroll — separate from product grid scroll. */
+    /* Only the cart items list scrolls internally; no overscroll-contain so the
+       wheel bubbles up to the page when reaching the top/bottom of the list. */
     .pos-cart .cart-list {
       flex: 1 1 auto;
       min-height: 0;
       overflow-y: auto;
       overflow-x: hidden;
-      overscroll-behavior: contain;
     }
     /* Custom scrollbar inside cart panel — subtle premium */
     .pos-cart::-webkit-scrollbar,
@@ -4922,10 +4916,16 @@
         0 -1px 4px rgba(0, 0, 0, 0.12) inset,
         0 10px 28px -8px rgba(6, 95, 70, 0.38),
         0 4px 14px -2px rgba(15, 23, 42, 0.1);
-      overflow: hidden;
+      /* Cap width to viewport and allow horizontal scroll INSIDE the nav when
+         too many items don't fit — never overlap. */
+      max-width: calc(100vw - 40px);
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
       animation: gnEnter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
       transition: background 0.4s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.4s ease, box-shadow 0.4s ease;
     }
+    .gooey-nav-container::-webkit-scrollbar { display: none; }
     /* Subtle inner highlight ring to match site's glass language */
     .gooey-nav-container::before {
       content: '';
@@ -4969,7 +4969,8 @@
     }
     .gooey-nav-container nav ul {
       display: flex;
-      gap: 0.4em;
+      align-items: center;
+      gap: 10px;                /* clearer separation between tabs */
       list-style: none;
       padding: 0;
       margin: 0;
@@ -4978,6 +4979,7 @@
       color: rgba(255, 255, 255, 0.92);
       text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
       font-family: 'Cairo', sans-serif;
+      white-space: nowrap;       /* nothing wraps onto a new line */
     }
     .gooey-nav-container nav ul li {
       border-radius: 100vw;
@@ -4986,11 +4988,11 @@
       transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
       box-shadow: 0 0 0.5px 1.5px transparent;
       color: rgba(255, 255, 255, 0.92);
-      /* Flex centering so each tab grows to fit its label evenly */
+      /* Each tab sizes to its content — never shrinks, never overlaps */
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 0;
+      min-width: max-content;
       flex: 0 0 auto;
     }
     .gooey-nav-container nav ul li:hover {
@@ -5010,15 +5012,19 @@
       align-items: center;
       justify-content: center;
       padding-block: 0.5em;
-      padding-inline: 1em;
+      padding-inline: 18px;       /* generous horizontal padding to avoid overlap */
       font-size: 13px;
       font-weight: 700;
       letter-spacing: -0.01em;
       color: inherit;
       text-decoration: none;
-      white-space: nowrap;        /* prevent label wrapping */
+      white-space: nowrap;        /* never wrap labels */
       line-height: 1.2;
-      min-height: 32px;           /* consistent vertical rhythm */
+      min-height: 32px;
+      min-width: max-content;     /* item width follows label width */
+    }
+    .gooey-nav-container nav ul li.active a {
+      padding-inline: 22px;       /* slightly more breathing room when active */
     }
     .gooey-nav-container nav ul li:focus-within:has(:focus-visible) {
       box-shadow: 0 0 0.5px 1.5px rgba(255, 255, 255, 0.6);
@@ -5082,7 +5088,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding-inline: 1em;
+      padding-inline: 22px;   /* matches the active <a> for perfect overlay */
     }
     .gooey-nav-container .effect.text.active { color: var(--pharmacy-green-deep, #047857); }
     [data-theme="dark"] .gooey-nav-container .effect.text { color: rgba(226, 232, 240, 0.92); }
@@ -5739,6 +5745,130 @@
     }
     /* Lock body scroll while overlay is visible */
     body.pin-locked { overflow: hidden !important; }
+
+    /* ═════════════════════ RISK WARNING MODAL (Prescription Control) ═════════════════════
+       Scoped to #riskWarningModal — does not affect any other modal styling.
+       Color level is set on the modal via data-level attribute. */
+    #riskWarningModal .risk-icon-wrap {
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      margin: 0 auto;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(251, 191, 36, 0.12));
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #92400e;
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    #riskWarningModal[data-level="warning"] .risk-icon-wrap {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.14));
+      border-color: rgba(245, 158, 11, 0.35);
+      color: #b45309;
+    }
+    #riskWarningModal[data-level="danger"] .risk-icon-wrap {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(220, 38, 38, 0.12));
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #991b1b;
+    }
+    #riskWarningModal[data-level="critical"] .risk-icon-wrap {
+      background: linear-gradient(135deg, rgba(190, 18, 60, 0.22), rgba(136, 19, 55, 0.16));
+      border-color: rgba(190, 18, 60, 0.5);
+      color: #881337;
+      animation: riskPulse 1.8s ease-in-out infinite;
+    }
+    @keyframes riskPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(190, 18, 60, 0.4); }
+      50%      { box-shadow: 0 0 0 8px rgba(190, 18, 60, 0); }
+    }
+    [data-theme="dark"] #riskWarningModal[data-level="warning"] .risk-icon-wrap { color: #fbbf24; }
+    [data-theme="dark"] #riskWarningModal[data-level="danger"] .risk-icon-wrap { color: #fca5a5; }
+    [data-theme="dark"] #riskWarningModal[data-level="critical"] .risk-icon-wrap { color: #fda4af; }
+
+    #riskWarningModal .modal-header h3 {
+      text-align: center;
+      font-size: 19px;
+      font-weight: 800;
+      margin-top: 12px;
+      letter-spacing: -0.015em;
+    }
+    #riskWarningModal .confirm-message {
+      text-align: center;
+      font-size: 14.5px;
+      font-weight: 600;
+      line-height: 1.65;
+      margin: 8px 0 14px;
+    }
+
+    /* Medicine info card inside the risk modal */
+    #riskWarningModal .risk-med-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      margin-bottom: 14px;
+    }
+    [data-theme="dark"] #riskWarningModal .risk-med-card {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    #riskWarningModal .risk-med-card img,
+    #riskWarningModal .risk-med-card .risk-med-thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      color: var(--pharmacy-green-deep);
+      border: 1px solid var(--border-soft);
+    }
+    #riskWarningModal .risk-med-card .risk-med-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    #riskWarningModal .risk-med-card .risk-med-meta strong {
+      display: block;
+      font-size: 15px;
+      color: var(--text-dark);
+      font-weight: 800;
+    }
+    #riskWarningModal .risk-med-card .risk-med-meta span {
+      display: block;
+      font-size: 12.5px;
+      color: var(--text-light);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    #riskWarningModal .risk-check-line {
+      margin-bottom: 4px;
+    }
+    /* Distinct levels for the consent line */
+    #riskWarningModal[data-level="danger"] .risk-check-line:has(input:checked),
+    #riskWarningModal[data-level="critical"] .risk-check-line:has(input:checked) {
+      border-color: var(--warning);
+      background: rgba(245, 158, 11, 0.08);
+    }
+    #riskWarningModal[data-level="warning"] .risk-check-line:has(input:checked) {
+      border-color: var(--pharmacy-green);
+      background: rgba(16, 185, 129, 0.06);
+    }
+    #riskWarningModal #riskConfirmBtn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      filter: grayscale(0.4);
+    }
+
 
     /* ═════════════════════ PHARMACY STORE — MEDICATION GRID ═════════════════════ */
     .med-store-grid {
@@ -9044,6 +9174,15 @@
             <textarea id="medDescription" placeholder="اكتب وصفاً للدواء، الاستخدامات، الجرعات..."></textarea>
           </div>
           <div class="form-group">
+            <label>نوع الخطورة <span class="label-hint">يتحكم بنوع التحقق قبل البيع</span></label>
+            <select id="medRiskType">
+              <option value="normal">✅ عادي — بيع مباشر بدون تحقق</option>
+              <option value="prescription">📋 وصفة طبية — يحتاج وصفة لتسليمه</option>
+              <option value="controlled">🔒 مراقب — وصفة معتمدة فقط</option>
+              <option value="high_risk">🚨 عالي الخطورة — تحقق مزدوج</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label>صورة الدواء <span class="label-hint">اختياري</span></label>
             <div class="image-upload-zone" id="imageUploadZone">
               <div class="upload-icon">🖼️</div>
@@ -9219,6 +9358,29 @@
       <div class="modal-actions">
         <button type="button" class="btn btn-ghost" id="confirmCancelBtn">إلغاء</button>
         <button type="button" class="btn btn-danger-solid" id="confirmConfirmBtn">حذف</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════════════════ نموذج تحذير الخطورة (Prescription Control) ═════════════════════ -->
+  <div class="modal-overlay" id="riskWarningModal">
+    <div class="modal confirm-modal glass" data-risk-modal>
+      <header class="modal-header">
+        <button class="close-btn" id="riskCloseBtn" aria-label="إغلاق">×</button>
+        <div class="confirm-icon-wrap risk-icon-wrap" id="riskIconWrap">
+          <span class="risk-icon-emoji">⚠️</span>
+        </div>
+        <h3 id="riskTitle">تحذير</h3>
+      </header>
+      <p class="confirm-message" id="riskMessage"></p>
+      <div class="risk-med-card" id="riskMedCard"></div>
+      <label class="rx-check-line risk-check-line">
+        <input type="checkbox" id="riskCheckCheckbox" />
+        <span id="riskCheckLabel"><strong>تم استلام الوصفة / تم التحقق</strong></span>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="riskCancelBtn">إلغاء</button>
+        <button type="button" class="btn btn-primary" id="riskConfirmBtn" disabled>تأكيد الإضافة للفاتورة</button>
       </div>
     </div>
   </div>
@@ -9913,6 +10075,9 @@
       $('medExpiry').value = med ? med.expiry : '';
       $('medBarcode').value = med ? (med.barcode || '') : '';
       $('medDescription').value = med ? (med.description || '') : '';
+      // Read riskType from medication or from the local map (since the worker
+      // doesn't currently persist this field). Defaults to 'normal'.
+      $('medRiskType').value = med ? (getMedRiskType(med) || 'normal') : 'normal';
       currentImageData = med && med.image ? med.image : null;
       updateImagePreview();
       document.querySelectorAll('#medForm .form-group').forEach(g => g.classList.remove('has-error'));
@@ -10067,21 +10232,25 @@
         return;
       }
 
+      const riskType = $('medRiskType').value || 'normal';
       const data = {
         name, company, price, qty, expiry,
         barcode: $('medBarcode').value.trim(),
         description: $('medDescription').value.trim(),
         image: currentImageData,
+        riskType,   // included on the object — also mirrored to the local map below
       };
 
       if (editingMedId) {
         const idx = medications.findIndex(m => m.id === editingMedId);
         if (idx >= 0) medications[idx] = { ...medications[idx], ...data };
+        setMedRiskType(editingMedId, riskType);
         logActivity('med_edited', 'تعديل دواء', `تم تعديل بيانات "${data.name}"`, { medName: data.name, medId: editingMedId });
         toast({ title: 'تم التحديث', message: `تم حفظ تعديلات "${data.name}" بنجاح`, type: 'success' });
       } else {
         const newId = medications.length ? Math.max(...medications.map(m => m.id)) + 1 : 1;
         medications.push({ id: newId, ...data, addedDate: new Date().toISOString() });
+        setMedRiskType(newId, riskType);
         logActivity('med_added', 'إضافة دواء جديد', `تم إضافة "${data.name}" بسعر ${fmt(data.price)} د.ع · ${fmt(data.qty)} وحدة`, { medName: data.name, medId: newId });
         toast({ title: 'تمت الإضافة', message: `تم إضافة "${data.name}" إلى المخزون`, type: 'success' });
       }
@@ -10341,6 +10510,147 @@
       }
     }
 
+    // ═══════ Prescription Control: risk type persistence + warning modal ═══════
+    // Worker doesn't persist `riskType` yet, so we mirror it in localStorage.
+    // The map keys are stringified medication IDs.
+    function loadRiskTypes() {
+      try { return JSON.parse(localStorage.getItem('pharmacy_med_risk_types') || '{}'); }
+      catch (_) { return {}; }
+    }
+    function setMedRiskType(medId, riskType) {
+      const map = loadRiskTypes();
+      map[String(medId)] = riskType;
+      localStorage.setItem('pharmacy_med_risk_types', JSON.stringify(map));
+      // Also patch the in-memory medication object so the live UI keeps it
+      const med = medications.find(m => String(m.id) === String(medId));
+      if (med) med.riskType = riskType;
+    }
+    function getMedRiskType(med) {
+      if (!med) return 'normal';
+      if (med.riskType) return med.riskType;
+      const map = loadRiskTypes();
+      return map[String(med.id)] || 'normal';
+    }
+
+    // Risk-level config (text + visual level)
+    const RISK_CONFIG = {
+      prescription: {
+        title: '📋 دواء وصفة طبية',
+        message: 'هذا الدواء يحتاج وصفة طبية. يجب التأكد من استلام وصفة سارية المفعول قبل صرفه.',
+        level: 'warning',
+        icon: '📋',
+        checkboxLabel: 'تم استلام الوصفة',
+      },
+      controlled: {
+        title: '🔒 دواء مراقب',
+        message: 'هذا دواء مراقب ولا يصرف إلا بوصفة معتمدة. يجب توثيق رقم الوصفة في السجل.',
+        level: 'danger',
+        icon: '🔒',
+        checkboxLabel: 'تم استلام وصفة معتمدة وتوثيقها',
+      },
+      high_risk: {
+        title: '🚨 دواء عالي الخطورة',
+        message: 'هذا الدواء عالي الخطورة ويتطلب تحقق إضافي. تأكد من ملاءمة الدواء وجرعته للمريض.',
+        level: 'critical',
+        icon: '🚨',
+        checkboxLabel: 'تم التحقق المزدوج من ملاءمة الدواء للمريض والجرعة',
+      },
+    };
+
+    // Show the warning modal. Calls onConfirm() if pharmacist approves, nothing on cancel.
+    function showRiskWarning(med, riskType, onConfirm) {
+      const cfg = RISK_CONFIG[riskType];
+      if (!cfg) { onConfirm && onConfirm(); return; }
+      const modal = document.getElementById('riskWarningModal');
+      modal.setAttribute('data-level', cfg.level);
+      document.getElementById('riskTitle').textContent = cfg.title;
+      document.getElementById('riskMessage').textContent = cfg.message;
+      document.querySelector('#riskIconWrap .risk-icon-emoji').textContent = cfg.icon;
+      document.getElementById('riskCheckLabel').innerHTML = `<strong>${cfg.checkboxLabel}</strong>`;
+
+      // Medication info card
+      const imgSrc = med.imageUrl || med.image || '';
+      const safe = String(med.name).replace(/"/g, '&quot;');
+      const thumb = imgSrc
+        ? `<img src="${imgSrc}" alt="${safe}" loading="lazy" onerror="this.outerHTML='<div class=&quot;risk-med-thumb&quot;>💊</div>';" />`
+        : `<div class="risk-med-thumb">💊</div>`;
+      document.getElementById('riskMedCard').innerHTML = `
+        ${thumb}
+        <div class="risk-med-meta">
+          <strong>${med.name}</strong>
+          <span>${med.company || '—'} · المتاح: ${fmt(med.qty)}</span>
+        </div>
+      `;
+
+      // Replace listeners cleanly each time (avoid duplicates) by cloning the
+      // elements. Always re-query the live DOM inside listeners — caching old
+      // references breaks after the cloneNode swap.
+      const cb = document.getElementById('riskCheckCheckbox');
+      const newCb = cb.cloneNode(true);
+      newCb.checked = false;
+      cb.parentNode.replaceChild(newCb, cb);
+      newCb.addEventListener('change', () => {
+        // Re-query fresh — element is in DOM, won't be stale.
+        const btn = document.getElementById('riskConfirmBtn');
+        if (btn) btn.disabled = !newCb.checked;
+      });
+
+      const confirmBtn = document.getElementById('riskConfirmBtn');
+      const newConfirm = confirmBtn.cloneNode(true);
+      newConfirm.disabled = true;
+      confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+      newConfirm.addEventListener('click', () => {
+        // Re-read the checkbox state from the live DOM element
+        const liveCb = document.getElementById('riskCheckCheckbox');
+        if (!liveCb || !liveCb.checked) return;
+        modal.classList.remove('active');
+        try {
+          logActivity('med_edited', 'تحقق خطورة دواء',
+            `صرف "${med.name}" (${cfg.title}) بعد تأكيد الصيدلي`,
+            { medId: med.id, riskType }
+          );
+        } catch (_) {}
+        onConfirm && onConfirm();
+      });
+
+      // Cancel handlers — replace to drop any prior listeners
+      const cancel = () => { modal.classList.remove('active'); };
+      const cancelBtn = document.getElementById('riskCancelBtn');
+      const newCancel = cancelBtn.cloneNode(true);
+      cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+      newCancel.addEventListener('click', cancel);
+
+      const closeBtn = document.getElementById('riskCloseBtn');
+      const newClose = closeBtn.cloneNode(true);
+      closeBtn.parentNode.replaceChild(newClose, closeBtn);
+      newClose.addEventListener('click', cancel);
+
+      modal.classList.add('active');
+    }
+
+    // Internal: actually add the medicine to the cart (after all checks/approvals).
+    function _commitAddToCart(medId) {
+      const med = medications.find(m => m.id === medId);
+      if (!med) return;
+      const days = daysUntil(med.expiry);
+      const existing = cart.find(c => c.id === medId);
+      const isFirstAdd = !existing;
+      if (isFirstAdd) {
+        cart.push({ id: med.id, name: med.name, price: med.price, qty: 1 });
+      } else {
+        existing.qty += 1;
+      }
+      if (isFirstAdd && days >= 0 && days <= 30) {
+        toast({
+          title: 'تنبيه: قرب الانتهاء',
+          message: `"${med.name}" ينتهي خلال ${days} يوم`,
+          type: 'warning'
+        });
+      }
+      renderCart();
+      flashProductCard(medId);
+    }
+
     window.addToCart = (medId) => {
       const med = medications.find(m => m.id === medId);
       if (!med) return;
@@ -10363,21 +10673,16 @@
         });
         return;
       }
-      const isFirstAdd = !existing;
-      if (isFirstAdd) {
-        cart.push({ id: med.id, name: med.name, price: med.price, qty: 1 });
-      } else {
-        existing.qty += 1;
+
+      // ─── Prescription control: only block FIRST add (not increments) ───
+      // If already in cart, the pharmacist already confirmed once for this med.
+      const riskType = getMedRiskType(med);
+      if (!existing && riskType !== 'normal' && RISK_CONFIG[riskType]) {
+        showRiskWarning(med, riskType, () => _commitAddToCart(medId));
+        return;
       }
-      if (isFirstAdd && days >= 0 && days <= 30) {
-        toast({
-          title: 'تنبيه: قرب الانتهاء',
-          message: `"${med.name}" ينتهي خلال ${days} يوم`,
-          type: 'warning'
-        });
-      }
-      renderCart();
-      flashProductCard(medId);
+      _commitAddToCart(medId);
+      return;
     };
 
     window.increaseQty = (medId) => {
