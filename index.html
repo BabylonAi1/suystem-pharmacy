@@ -9170,6 +9170,13 @@
             معلومات إضافية
           </div>
           <div class="form-group">
+            <label>نوع الدواء / التصنيف *</label>
+            <select id="medCategory" required>
+              <!-- options populated from MED_CATEGORIES at script load -->
+            </select>
+            <div class="error-msg">يجب اختيار التصنيف</div>
+          </div>
+          <div class="form-group">
             <label>الوصف <span class="label-hint">اختياري</span></label>
             <textarea id="medDescription" placeholder="اكتب وصفاً للدواء، الاستخدامات، الجرعات..."></textarea>
           </div>
@@ -10075,6 +10082,14 @@
       $('medExpiry').value = med ? med.expiry : '';
       $('medBarcode').value = med ? (med.barcode || '') : '';
       $('medDescription').value = med ? (med.description || '') : '';
+      // Category: try the saved value first; if it matches a canonical label
+      // exactly the dropdown will pick it. Otherwise leave empty for the user.
+      const catSelect = $('medCategory');
+      if (catSelect) {
+        const savedCat = (med && med.category) || '';
+        const hasOption = !!catSelect.querySelector(`option[value="${savedCat.replace(/"/g, '\\"')}"]`);
+        catSelect.value = hasOption ? savedCat : '';
+      }
       // Read riskType from medication or from the local map (since the worker
       // doesn't currently persist this field). Defaults to 'normal'.
       $('medRiskType').value = med ? (getMedRiskType(med) || 'normal') : 'normal';
@@ -10218,12 +10233,15 @@
       const price = parseFloat(priceRaw);
       const qty = parseInt(qtyRaw);
 
+      const category = ($('medCategory') && $('medCategory').value || '').trim();
+
       let valid = true;
       valid = setFieldError('medName', !name, 'يجب إدخال اسم الدواء') && valid;
       valid = setFieldError('medCompany', !company, 'يجب إدخال اسم الشركة') && valid;
       valid = setFieldError('medPrice', priceRaw === '' || isNaN(price) || price < 0, 'يجب إدخال سعر صحيح') && valid;
       valid = setFieldError('medQty', qtyRaw === '' || isNaN(qty) || qty < 0, 'يجب إدخال كمية صحيحة') && valid;
       valid = setFieldError('medExpiry', !expiry, 'يجب إدخال تاريخ الانتهاء') && valid;
+      valid = setFieldError('medCategory', !category, 'يجب اختيار التصنيف') && valid;
 
       if (!valid) {
         toast({ title: 'خطأ في النموذج', message: 'يرجى تصحيح الحقول المميزة بالأحمر', type: 'error' });
@@ -10234,7 +10252,7 @@
 
       const riskType = $('medRiskType').value || 'normal';
       const data = {
-        name, company, price, qty, expiry,
+        name, company, price, qty, expiry, category,
         barcode: $('medBarcode').value.trim(),
         description: $('medDescription').value.trim(),
         image: currentImageData,
@@ -10278,18 +10296,33 @@
 
     // ─────────── Categories dropdown ───────────────────────────────────
     // Additive filter beside the existing filters. Does NOT replace them.
+    // Canonical category list — used by BOTH the filter dropdown and the
+    // Add/Edit Medicine modal. The `label` is what users see and what gets
+    // stored in `medicine.category`.
     const MED_CATEGORIES = [
-      { key: 'painkillers',  label: 'مسكنات',         icon: '💊', match: ['مسكن'] },
-      { key: 'antibiotics',  label: 'مضادات حيوية',   icon: '🦠', match: ['مضاد حيوي', 'مضادات حيوية'] },
-      { key: 'vitamins',     label: 'فيتامينات',       icon: '🍊', match: ['فيتامين'] },
-      { key: 'children',     label: 'أطفال',           icon: '🧒', match: ['أطفال', 'طفل', 'سيتامول شراب'] },
-      { key: 'derma',        label: 'جلدية',            icon: '🧴', match: ['جلد', 'جلدية', 'موضعي', 'إيمولجل', 'كريم', 'مرهم'] },
-      { key: 'diabetes',     label: 'سكري',             icon: '🩸', match: ['سكري', 'السكري'] },
-      { key: 'cardio',       label: 'قلب وضغط',       icon: '❤️', match: ['قلب', 'ضغط'] },
-      { key: 'syrups',       label: 'شرابات',           icon: '🧪', match: ['شراب', 'سيرب', 'syrup'] },
-      { key: 'injections',   label: 'إبر',                icon: '💉', match: ['إبر', 'حقن', 'حقنة', 'بخاخ', 'inhaler'] },
-      { key: 'supplements',  label: 'مكملات غذائية', icon: '🌿', match: ['مكمل', 'مكملات'] },
+      { key: 'painkillers',   label: 'مسكنات',           icon: '💊', match: ['مسكن'] },
+      { key: 'antibiotics',   label: 'مضادات حيوية',     icon: '🦠', match: ['مضاد حيوي', 'مضادات حيوية'] },
+      { key: 'vitamins',      label: 'فيتامينات',         icon: '🍊', match: ['فيتامين'] },
+      { key: 'children',      label: 'أطفال',             icon: '🧒', match: ['أطفال', 'طفل'] },
+      { key: 'derma',         label: 'جلدية',              icon: '🧴', match: ['جلد', 'جلدية', 'موضعي', 'إيمولجل', 'كريم', 'مرهم'] },
+      { key: 'diabetes',      label: 'سكري',               icon: '🩸', match: ['سكري', 'السكري'] },
+      { key: 'cardio',        label: 'قلب وضغط',         icon: '❤️', match: ['قلب', 'ضغط'] },
+      { key: 'digestive',     label: 'جهاز هضمي',         icon: '🍽️', match: ['جهاز هضمي', 'هضمي', 'معدة', 'حموضة', 'قرحة'] },
+      { key: 'syrups',        label: 'شرابات',             icon: '🧪', match: ['شراب', 'سيرب', 'syrup'] },
+      { key: 'injections',    label: 'إبر',                 icon: '💉', match: ['إبر', 'حقن', 'حقنة', 'بخاخ', 'inhaler'] },
+      { key: 'supplements',   label: 'مكملات غذائية',    icon: '🌿', match: ['مكمل', 'مكملات'] },
     ];
+
+    // Populate the Add/Edit Medicine modal's category <select> from the same list.
+    function populateMedCategoryOptions() {
+      const sel = document.getElementById('medCategory');
+      if (!sel) return;
+      sel.innerHTML =
+        '<option value="">-- اختر التصنيف --</option>' +
+        MED_CATEGORIES.map(c => `<option value="${c.label}">${c.icon} ${c.label}</option>`).join('');
+    }
+    // Populate at script load — modal exists already (it's part of the HTML).
+    populateMedCategoryOptions();
 
     // Decide if a medication belongs to a UI category. Looks at: category,
     // notes (brand), name, and description — case-insensitive, accent-loose.
@@ -11197,10 +11230,13 @@
       const dailyRefunded = todayRefunded.reduce((s, i) => s + i.total, 0);
 
       $('dailyProfit').textContent = fmt(dailyProfit) + ' د.ع';
+      // Use innerHTML + <bdi> wrappers so numbers don't get split by BiDi
+      // (Arabic text + Western digits rendering issue).
       const refundsBadge = dailyRefunded > 0
-        ? ` · مسترجعات: ${fmt(dailyRefunded)} د.ع`
+        ? ` · مسترجعات: <bdi class="num">${fmt(dailyRefunded)}</bdi> د.ع`
         : '';
-      $('dailyProfitDate').textContent = `إيرادات يوم ${formatDate(new Date())} · ${todayActive.length} فاتورة فعّالة${refundsBadge}`;
+      $('dailyProfitDate').innerHTML =
+        `إيرادات يوم <bdi class="num">${formatDate(new Date())}</bdi> · <bdi class="num">${todayActive.length}</bdi> فاتورة فعّالة${refundsBadge}`;
 
       const salesMap = {};
       invoices.filter(inv => !isInvoiceRefunded(inv)).forEach(inv => {
@@ -11215,7 +11251,9 @@
       if (sortedSales.length > 0) {
         const top = sortedSales[0];
         $('topMedication').textContent = top.name;
-        $('topMedicationStats').textContent = `تم بيع ${top.qty} وحدة بإيراد ${fmt(top.revenue)} د.ع`;
+        // Wrap numbers in <bdi> to keep them as LTR-isolated tokens inside RTL text.
+        $('topMedicationStats').innerHTML =
+          `تم بيع <bdi class="num">${fmt(top.qty)}</bdi> وحدة بإيراد <bdi class="num">${fmt(top.revenue)}</bdi> د.ع`;
       } else {
         $('topMedication').textContent = 'لا يوجد';
         $('topMedicationStats').textContent = 'لم يتم تسجيل مبيعات بعد';
@@ -13818,6 +13856,10 @@
         activeIndex = idx;
         items.forEach((it, i) => it.classList.toggle('active', i === idx));
         updateEffectPosition(items[idx]);
+        // Ensure the text overlay also gets `.active` so its color matches
+        // the dark-on-light styling of the white pill (otherwise text appears
+        // white-on-white in light mode).
+        textEl.classList.add('active');
       } else if (idx < 0) {
         // Active page isn't in the GooeyNav (e.g., Activity log) — hide the pill effect
         items.forEach(it => it.classList.remove('active'));
