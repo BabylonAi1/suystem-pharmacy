@@ -5261,13 +5261,48 @@
         background: linear-gradient(135deg, #060912 0%, #0a0f1a 50%, #060912 100%) !important;
       }
 
-      /* === [7] PROPER NAV — make sure ALL items reachable === */
+      /* === [7] MOBILE NAV — all 9 items reachable + clean active pill === */
       .gooey-nav-container {
         max-width: calc(100vw - 16px) !important;
         overflow-x: auto !important;
         overflow-y: visible !important;
         -webkit-overflow-scrolling: touch;
+        /* Generous side padding so first/last items aren't flush against the
+           pill-rounded edges. scroll-padding ensures snap centers properly. */
+        padding: 4px 14px !important;
+        scroll-padding-inline: 14px;
+        scroll-snap-type: x proximity;
+        scroll-behavior: smooth;
       }
+      /* Each tab snaps into view smoothly when tapped */
+      .gooey-nav-container nav ul li {
+        scroll-snap-align: center;
+        scroll-margin-inline: 4px;
+      }
+      /* Disable :hover background on touch devices — it sticks after tap and
+         makes inactive items look "active". Use solid transparent reset. */
+      .gooey-nav-container nav ul li:hover {
+        background: transparent !important;
+      }
+      .gooey-nav-container nav ul li:hover .icon { transform: none !important; }
+      /* Active pill — confined to its <li> only (inset:0), simple gradient */
+      .gooey-nav-container nav ul li.active::after {
+        background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.15);
+      }
+      /* Touch-friendly font + spacing on the link itself */
+      .gooey-nav-container nav ul li a {
+        padding-inline: 14px !important;
+        font-size: 12.5px !important;
+      }
+      .gooey-nav-container nav ul li.active a {
+        padding-inline: 16px !important;
+      }
+      /* Auto-scroll the active item into view on page change.
+         (CSS-only fallback via :target-like is not enough; JS-driven smooth
+         scroll is handled via scroll-behavior: smooth on the container.) */
 
       /* === existing mobile sizing tweaks for the DESKTOP layout === */
       /* Desktop content stays visible — sidebar already hidden globally,
@@ -13961,6 +13996,13 @@
       Object.assign(filterEl.style, styles);
       Object.assign(textEl.style, styles);
       textEl.innerText = li.innerText;
+
+      // On mobile, scroll the active tab into the centre of the nav so
+      // the user can always see it (and the items around it).
+      if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
+        try { li.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }
+        catch (_) {}
+      }
     }
     function activate(index, li, triggerNav = true) {
       if (activeIndex === index) return;
