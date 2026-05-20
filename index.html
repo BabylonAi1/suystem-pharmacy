@@ -390,6 +390,165 @@
     }
     /* Mobile now uses the desktop layout — floating theme toggle stays visible
        (positioned/sized for mobile inside the main mobile media query below). */
+
+    /* ═════════════════════ THEME SWITCHER POPOVER ═════════════════════ */
+    .theme-switcher { position: fixed; bottom: 28px; left: 28px; z-index: 70; }
+    /* Icon swap by theme on the trigger */
+    .floating-theme-toggle .ft-sun,
+    .floating-theme-toggle .ft-medical,
+    .floating-theme-toggle .ft-moon {
+      position: absolute;
+      transition: opacity 0.4s var(--ease-smooth), transform 0.4s var(--ease-bounce);
+    }
+    .floating-theme-toggle .ft-medical { opacity: 0; transform: rotate(-30deg) scale(0.5); }
+    .floating-theme-toggle .ft-moon    { opacity: 0; transform: rotate(-45deg) scale(0.5); }
+    [data-theme="medical"] .floating-theme-toggle .ft-sun     { opacity: 0; transform: rotate(30deg) scale(0.5); }
+    [data-theme="medical"] .floating-theme-toggle .ft-medical { opacity: 1; transform: rotate(0) scale(1); }
+    [data-theme="medical"] .floating-theme-toggle .ft-moon    { opacity: 0; transform: rotate(-30deg) scale(0.5); }
+    [data-theme="dark"] .floating-theme-toggle .ft-sun        { opacity: 0; transform: rotate(45deg) scale(0.5); }
+    [data-theme="dark"] .floating-theme-toggle .ft-medical    { opacity: 0; transform: rotate(30deg) scale(0.5); }
+    [data-theme="dark"] .floating-theme-toggle .ft-moon       { opacity: 1; transform: rotate(0) scale(1); }
+
+    /* The popover panel */
+    .theme-popover {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 0;
+      min-width: 280px;
+      max-width: 320px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 18px 40px -14px rgba(15, 23, 42, 0.22),
+        0 8px 24px -8px rgba(16, 185, 129, 0.18);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(8px) scale(0.96);
+      transform-origin: bottom left;
+      transition:
+        opacity 0.22s var(--ease-smooth),
+        transform 0.25s var(--ease-bounce),
+        visibility 0s linear 0.25s;
+    }
+    .theme-switcher.is-open .theme-popover {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+      transition:
+        opacity 0.22s var(--ease-smooth),
+        transform 0.25s var(--ease-bounce),
+        visibility 0s linear;
+    }
+    [data-theme="dark"] .theme-popover {
+      background: rgba(22, 27, 34, 0.96);
+      border-color: rgba(52, 211, 153, 0.18);
+      box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.4),
+        0 18px 40px -14px rgba(0, 0, 0, 0.6),
+        0 8px 24px -8px rgba(16, 185, 129, 0.2);
+    }
+    [data-theme="medical"] .theme-popover {
+      background: #ffffff;
+      border-color: rgba(34, 197, 94, 0.2);
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 18px 40px -14px rgba(34, 197, 94, 0.22);
+    }
+
+    .theme-popover-header {
+      padding: 10px 12px 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-light);
+      letter-spacing: -0.005em;
+      border-bottom: 1px solid var(--border-soft);
+      margin-bottom: 6px;
+    }
+
+    .theme-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 10px 12px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      text-align: right;
+      color: var(--text-mid);
+      transition: all 0.2s var(--ease-smooth);
+      margin-bottom: 4px;
+    }
+    .theme-option:hover {
+      background: rgba(16, 185, 129, 0.06);
+      color: var(--pharmacy-green-deep);
+    }
+    .theme-option.active {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(20, 184, 166, 0.10) 100%);
+      border-color: rgba(16, 185, 129, 0.30);
+      color: var(--pharmacy-green-deep);
+    }
+    [data-theme="medical"] .theme-option.active {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.16) 0%, rgba(14, 165, 233, 0.08) 100%);
+      border-color: rgba(34, 197, 94, 0.35);
+      color: #15803d;
+    }
+    [data-theme="dark"] .theme-option { color: var(--text-mid); }
+    [data-theme="dark"] .theme-option:hover {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--pharmacy-green-light);
+    }
+    [data-theme="dark"] .theme-option.active {
+      background: rgba(16, 185, 129, 0.16);
+      color: var(--pharmacy-green-light);
+    }
+    .theme-option-icon {
+      font-size: 22px;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: rgba(0, 0, 0, 0.03);
+      border-radius: 10px;
+    }
+    [data-theme="dark"] .theme-option-icon { background: rgba(255, 255, 255, 0.04); }
+    .theme-option-label {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .theme-option-label strong {
+      font-size: 13.5px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .theme-option-label small {
+      font-size: 11.5px;
+      color: var(--text-soft);
+      font-weight: 600;
+      margin-top: 1px;
+    }
+    .theme-option-check {
+      opacity: 0;
+      color: var(--pharmacy-green-deep);
+      font-weight: 900;
+      font-size: 16px;
+      flex-shrink: 0;
+      transition: opacity 0.2s ease;
+    }
+    .theme-option.active .theme-option-check { opacity: 1; }
+    [data-theme="dark"] .theme-option-check { color: var(--pharmacy-green-light); }
+
     .floating-theme-toggle:hover {
       transform: translateY(-2px);
       box-shadow:
@@ -4220,6 +4379,124 @@
       --warning: #fbbf24;
       --success: #34d399;
     }
+
+    /* ═════════════════════ MEDICAL GREEN MODE ═════════════════════
+       Clinical / pharmacy-inspired palette: soft mint background, crisp white
+       surfaces, vibrant medical green, and clear blue accent. */
+    [data-theme="medical"] {
+      --pharmacy-green:       #22c55e;
+      --pharmacy-green-dark:  #16a34a;
+      --pharmacy-green-light: #4ade80;
+      --pharmacy-green-deep:  #15803d;
+      --turquoise:            #16a34a;
+      --turquoise-light:      #4ade80;
+      --turquoise-deep:       #15803d;
+      --accent-cyan:          #0ea5e9;
+      --accent-cyan-light:    #38bdf8;
+      --mint:        #dcfce7;
+      --mint-soft:   #f0fdf4;
+      --soft-blue:   #f0f9ff;
+      --white:       #ffffff;
+      --off-white:   #f0fdf4;
+      /* Text — strong contrast for clinical readability */
+      --text-dark:   #0f172a;
+      --text-mid:    #334155;
+      --text-light:  #64748b;
+      --text-soft:   #94a3b8;
+      /* Borders + glass — cleaner, subtle green tint */
+      --border-soft:   rgba(34, 197, 94, 0.10);
+      --border-strong: rgba(34, 197, 94, 0.20);
+      --glass-bg:        rgba(255, 255, 255, 0.88);
+      --glass-bg-strong: rgba(255, 255, 255, 0.96);
+      --glass-border:    rgba(34, 197, 94, 0.18);
+      /* Lighter, softer shadows for a clinical/airy feel */
+      --glass-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.03),
+        0 10px 28px -12px rgba(34, 197, 94, 0.18);
+      --glass-shadow-hover:
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 16px 36px -14px rgba(34, 197, 94, 0.30);
+      --danger:      #ef4444;
+      --warning:     #f59e0b;
+      --success:     #22c55e;
+      --success-soft: #dcfce7;
+    }
+    [data-theme="medical"] body {
+      background: #f0fdf4;
+      color: var(--text-dark);
+    }
+    [data-theme="medical"] body::before {
+      background:
+        radial-gradient(ellipse 70% 50% at 100% 0%, rgba(34, 197, 94, 0.10) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 0% 100%, rgba(14, 165, 233, 0.08) 0%, transparent 55%),
+        linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #f0fdf4 100%);
+    }
+    [data-theme="medical"] .circle { opacity: 0.35; }
+    /* Page header heading: clean dark text + green underline accent feel */
+    [data-theme="medical"] .page-header h2 {
+      background: linear-gradient(135deg, #0f172a 0%, #15803d 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    /* Sidebar / dock active states match medical palette */
+    [data-theme="medical"] .nav-btn.active {
+      background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+    }
+    /* GooeyNav container with medical gradient */
+    [data-theme="medical"] .gooey-nav-container {
+      background:
+        linear-gradient(135deg, rgba(21, 128, 61, 0.92) 0%, rgba(22, 163, 74, 0.92) 55%, rgba(34, 197, 94, 0.92) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    /* Floating theme toggle in medical mode */
+    [data-theme="medical"] .floating-theme-toggle {
+      background: rgba(255, 255, 255, 0.88);
+      border-color: rgba(34, 197, 94, 0.22);
+    }
+    /* Cards — crisp white surfaces with subtle green tint shadows */
+    [data-theme="medical"] .glass,
+    [data-theme="medical"] .stat-card,
+    [data-theme="medical"] .panel,
+    [data-theme="medical"] .med-store-card,
+    [data-theme="medical"] .pos-product-card,
+    [data-theme="medical"] .smart-card,
+    [data-theme="medical"] .modal {
+      background: #ffffff;
+      border-color: rgba(34, 197, 94, 0.12);
+    }
+    [data-theme="medical"] .stat-card:hover,
+    [data-theme="medical"] .med-store-card:hover,
+    [data-theme="medical"] .pos-product-card:hover {
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 14px 32px -12px rgba(34, 197, 94, 0.28);
+    }
+    /* Buttons — sharper green tones */
+    [data-theme="medical"] .btn-primary,
+    [data-theme="medical"] .btn-success {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      box-shadow: 0 4px 14px -2px rgba(34, 197, 94, 0.35);
+    }
+    [data-theme="medical"] .btn-primary:hover,
+    [data-theme="medical"] .btn-success:hover {
+      box-shadow: 0 8px 20px -4px rgba(34, 197, 94, 0.45);
+    }
+    /* Tables: cleaner thead with crisp green */
+    [data-theme="medical"] #medications .med-table thead th,
+    [data-theme="medical"] #shortages .shortage-table thead th {
+      background: linear-gradient(180deg, #dcfce7 0%, #bbf7d0 100%);
+      color: #15803d;
+      border-bottom-color: rgba(34, 197, 94, 0.3);
+    }
+    /* Theme transition — smooth color/background fade */
+    body.theme-transitioning,
+    body.theme-transitioning *,
+    body.theme-transitioning *::before,
+    body.theme-transitioning *::after {
+      transition: background-color 0.45s ease, color 0.45s ease,
+                  border-color 0.45s ease, box-shadow 0.45s ease !important;
+    }
+
     [data-theme="dark"] body { background: #060912; color: var(--text-dark); }
     [data-theme="dark"] body::before {
       background:
@@ -8600,14 +8877,6 @@
                 <span class="pm-icon">💵</span>
                 <span>نقدي</span>
               </button>
-              <button type="button" class="payment-method-btn" data-method="card" role="tab">
-                <span class="pm-icon">💳</span>
-                <span>بطاقة</span>
-              </button>
-              <button type="button" class="payment-method-btn" data-method="credit" role="tab">
-                <span class="pm-icon">📝</span>
-                <span>آجل</span>
-              </button>
             </div>
 
             <div class="summary-input-line">
@@ -9687,11 +9956,41 @@
     <span class="effect text"></span>
   </div>
 
-  <!-- Floating Theme Toggle (replaces sidebar toggle) -->
-  <button class="floating-theme-toggle" id="floatingThemeToggle" aria-label="تبديل المظهر" title="تبديل المظهر">
-    <span class="ft-sun">☀️</span>
-    <span class="ft-moon">🌙</span>
-  </button>
+  <!-- Theme Switcher (popover with 3 themes: light / medical / dark) -->
+  <div class="theme-switcher" id="themeSwitcher">
+    <button class="floating-theme-toggle" id="floatingThemeToggle" aria-label="إعدادات المظهر" title="إعدادات المظهر" aria-haspopup="true" aria-expanded="false">
+      <span class="ft-sun">☀️</span>
+      <span class="ft-medical">⚕️</span>
+      <span class="ft-moon">🌙</span>
+    </button>
+    <div class="theme-popover" id="themePopover" role="menu" aria-hidden="true">
+      <div class="theme-popover-header">🎨 إعدادات المظهر</div>
+      <button class="theme-option" data-theme-value="light" role="menuitem">
+        <span class="theme-option-icon">☀️</span>
+        <span class="theme-option-label">
+          <strong>الوضع الفاتح</strong>
+          <small>زمردي كلاسيكي على خلفية فاتحة</small>
+        </span>
+        <span class="theme-option-check">✓</span>
+      </button>
+      <button class="theme-option" data-theme-value="medical" role="menuitem">
+        <span class="theme-option-icon">⚕️</span>
+        <span class="theme-option-label">
+          <strong>Medical Green</strong>
+          <small>طبي احترافي — أخضر نقي + أبيض</small>
+        </span>
+        <span class="theme-option-check">✓</span>
+      </button>
+      <button class="theme-option" data-theme-value="dark" role="menuitem">
+        <span class="theme-option-icon">🌙</span>
+        <span class="theme-option-label">
+          <strong>الوضع الداكن</strong>
+          <small>مريح للعين في الإضاءة المنخفضة</small>
+        </span>
+        <span class="theme-option-check">✓</span>
+      </button>
+    </div>
+  </div>
 
   <!-- إشعارات Toast -->
   <div class="toast-container" id="toastContainer"></div>
@@ -10037,41 +10336,84 @@
       collapseBtn.setAttribute('title', isCollapsed ? 'توسيع القائمة' : 'طي القائمة');
     });
 
-    // ============== تبديل المظهر (Light/Dark) ==============
+    // ============== تبديل المظهر (Light / Medical / Dark) ==============
+    // 3 themes — selected via the floating popover. Persists in localStorage.
     const themeToggle = $('themeToggle');
     const themeLabel = $('themeLabel');
     const root = document.documentElement;
+    const VALID_THEMES = ['light', 'medical', 'dark'];
 
     function applyTheme(theme) {
-      if (theme === 'dark') {
-        root.setAttribute('data-theme', 'dark');
-        themeLabel.textContent = 'الوضع الفاتح';
-        themeToggle.setAttribute('title', 'التبديل إلى الوضع الفاتح');
-      } else {
+      if (!VALID_THEMES.includes(theme)) theme = 'light';
+      if (theme === 'light') {
         root.removeAttribute('data-theme');
-        themeLabel.textContent = 'الوضع الداكن';
-        themeToggle.setAttribute('title', 'التبديل إلى الوضع الداكن');
+      } else {
+        root.setAttribute('data-theme', theme);
       }
+      // Update sidebar label (legacy element, harmless if hidden)
+      if (themeLabel) {
+        themeLabel.textContent =
+          theme === 'dark'    ? 'الوضع الفاتح'
+        : theme === 'medical' ? 'الوضع الداكن'
+        :                       'الوضع الطبي';
+      }
+      // Update active state on popover options
+      document.querySelectorAll('.theme-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.themeValue === theme);
+      });
+    }
+
+    function setTheme(theme) {
+      document.body.classList.add('theme-transitioning');
+      applyTheme(theme);
+      try { localStorage.setItem('theme', theme); } catch (_) {}
+      setTimeout(() => document.body.classList.remove('theme-transitioning'), 550);
     }
 
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
+    applyTheme(VALID_THEMES.includes(savedTheme) ? savedTheme : (prefersDark ? 'dark' : 'light'));
 
-    themeToggle.addEventListener('click', () => {
-      const isDark = root.getAttribute('data-theme') === 'dark';
-      const nextTheme = isDark ? 'light' : 'dark';
-      document.body.classList.add('theme-transitioning');
-      applyTheme(nextTheme);
-      localStorage.setItem('theme', nextTheme);
-      setTimeout(() => document.body.classList.remove('theme-transitioning'), 550);
+    // Sidebar theme toggle (legacy) — cycles through the 3 themes
+    themeToggle?.addEventListener('click', () => {
+      const current = root.getAttribute('data-theme') || 'light';
+      const idx = VALID_THEMES.indexOf(current);
+      const next = VALID_THEMES[(idx + 1) % VALID_THEMES.length];
+      setTheme(next);
     });
 
-    // Floating theme toggle — delegates to the original toggle
+    // Floating theme popover
+    const themeSwitcher = $('themeSwitcher');
     const floatingThemeBtn = $('floatingThemeToggle');
-    if (floatingThemeBtn) {
-      floatingThemeBtn.addEventListener('click', () => themeToggle.click());
+    const themePopover = $('themePopover');
+    if (themeSwitcher && floatingThemeBtn && themePopover) {
+      // Toggle popover open/close on trigger click
+      floatingThemeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = themeSwitcher.classList.toggle('is-open');
+        floatingThemeBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        themePopover.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+      });
+      // Pick a theme
+      themePopover.querySelectorAll('.theme-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setTheme(opt.dataset.themeValue);
+          themeSwitcher.classList.remove('is-open');
+          floatingThemeBtn.setAttribute('aria-expanded', 'false');
+        });
+      });
+      // Close on outside click
+      document.addEventListener('click', (e) => {
+        if (!themeSwitcher.contains(e.target)) themeSwitcher.classList.remove('is-open');
+      });
+      // Close on Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') themeSwitcher.classList.remove('is-open');
+      });
     }
+
+    // (Old floating toggle delegate removed — popover handles all clicks now.)
 
     function renderDashboard() {
       const today = todayStr();
