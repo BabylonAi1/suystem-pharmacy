@@ -388,10 +388,8 @@
       transition: transform 0.3s var(--ease-smooth), box-shadow 0.3s var(--ease-smooth), background 0.3s var(--ease-smooth);
       padding: 0;
     }
-    /* Hide floating theme toggle on mobile (mobile has its own theme button in topbar) */
-    @media (max-width: 768px) {
-      .floating-theme-toggle { display: none; }
-    }
+    /* Mobile now uses the desktop layout — floating theme toggle stays visible
+       (positioned/sized for mobile inside the main mobile media query below). */
     .floating-theme-toggle:hover {
       transform: translateY(-2px);
       box-shadow:
@@ -4958,9 +4956,8 @@
       from { opacity: 0; transform: translateX(-50%) translateY(-20px) scale(0.92); }
       to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
     }
-    @media (max-width: 768px) {
-      .gooey-nav-container { display: none; }
-    }
+    /* GooeyNav remains visible on mobile — sized down in the main mobile
+       media query below. (Previously hidden because mobile had its own nav.) */
 
     .gooey-nav-container nav {
       display: flex;
@@ -5158,26 +5155,89 @@
     }
 
     /* ═══════════════════════════════════════════════════════════════════════
-       MOBILE-ONLY LAYOUT — visible only on screens ≤768px.
-       Desktop ≥769px is COMPLETELY untouched.
+       MOBILE LAYOUT
+       The separate mobile-only layout has been retired. The DESKTOP layout
+       (.content + #gooeyNav) is now used on ALL screen sizes — it scales down
+       responsively via media queries throughout the stylesheet so the visual
+       identity (colors, gradients, glass cards, typography) stays identical.
        ═══════════════════════════════════════════════════════════════════════ */
-    .mobile-only-layout { display: none; }
+    .mobile-only-layout { display: none !important; }
 
     @media (max-width: 768px) {
       html, body { overflow-x: hidden !important; }
-      /* Hide ALL desktop chrome on mobile */
-      .sidebar,
-      .dock-outer,
-      .floating-theme-toggle,
-      main.content { display: none !important; }
+      /* Desktop content stays visible — sidebar already hidden globally,
+         floating theme toggle is repositioned below. */
 
-      /* Show mobile layout */
-      .mobile-only-layout {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-        background: transparent;
+      /* === Mobile-only sizing tweaks for the DESKTOP layout === */
+
+      /* Content has more compact padding on small screens. */
+      .content { padding: 100px 14px 90px !important; }
+
+      /* GooeyNav: smaller container, smaller tabs, horizontal scroll already enabled */
+      .gooey-nav-container { top: 12px; padding: 3px 5px; max-width: calc(100vw - 24px); }
+      .gooey-nav-container nav ul { gap: 4px; }
+      .gooey-nav-container nav ul li a { padding-block: 0.45em; padding-inline: 12px; font-size: 12px; min-height: 28px; }
+      .gooey-nav-container nav ul li.active a { padding-inline: 14px; }
+      .gooey-nav-container .effect.text { font-size: 12px; padding-inline: 14px; }
+
+      /* Floating theme toggle — smaller, repositioned to bottom-right */
+      .floating-theme-toggle {
+        bottom: 20px;
+        left: 20px;
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
       }
+
+      /* Page headers — compact spacing */
+      .page-header { margin-bottom: 22px; flex-wrap: wrap; gap: 10px; }
+      .page-header h2 { font-size: 24px; letter-spacing: -0.02em; }
+      .page-header .subtitle { font-size: 13px; }
+      .date-badge { padding: 7px 12px; font-size: 12px; }
+
+      /* Stats grid — 2 columns on mobile, single column under 380px */
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
+      @media (max-width: 380px) {
+        .stats-grid { grid-template-columns: 1fr; }
+      }
+      .stat-card { padding: 16px 14px; gap: 12px; min-height: 0; }
+      .stat-icon { width: 42px; height: 42px; font-size: 20px; border-radius: 12px; }
+      .stat-info h3 { font-size: 18px; }
+      .stat-info p { font-size: 11.5px; }
+      .stat-trend { font-size: 10.5px; }
+
+      /* Dashboard / reports / alerts grids — single column on mobile */
+      .dashboard-grid, .reports-grid, .alerts-grid { grid-template-columns: 1fr; gap: 14px; }
+      .panel { padding: 16px; }
+      .panel h3 { font-size: 16px; margin-bottom: 10px; }
+      .big-number { font-size: 28px; }
+
+      /* Recent / alert items */
+      .recent-item { padding: 10px 12px; }
+      .recent-item .info strong { font-size: 13px; }
+      .recent-item .info span  { font-size: 11.5px; }
+      .recent-item .amount     { font-size: 13.5px; }
+
+      /* Toolbar (search + filter pills) — stacked on mobile */
+      .toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+      .search-box input { padding: 11px 42px 11px 14px; font-size: 14px; }
+      .filter-pills { flex-wrap: wrap; gap: 6px; }
+      .pill { padding: 6px 12px; font-size: 11.5px; }
+
+      /* Tables retain horizontal scroll via their wrappers — done already in
+         per-table CSS (#medications/.shortage-table) */
+
+      /* POS — stacked already via 1180px breakpoint above */
+      .pos-products { padding: 16px; }
+      .pos-cart { padding: 16px; }
+      .pos-product-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+
+      /* Buttons in header (e.g. "إضافة دواء جديد", "تفريغ الفواتير") wrap nicely */
+      .page-header .btn { padding: 9px 16px; font-size: 13px; }
+      .shortage-header-actions { width: 100%; flex-direction: column; }
+      .shortage-header-actions .btn { width: 100%; justify-content: center; }
+
+      /* Mobile bottom nav (the new minimal one) is added below */
 
       /* ───── Top Bar ───── */
       .m-topbar {
