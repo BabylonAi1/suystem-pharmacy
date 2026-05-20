@@ -5240,6 +5240,11 @@
       display: flex;
       position: relative;
       transform: translate3d(0, 0, 0.01px);
+      /* Force the nav to size to its content so the container's scrollWidth
+         correctly reflects all items — otherwise the container collapses to
+         its own clientWidth and the last items (e.g. "إضافة موظف") get cut. */
+      min-width: max-content;
+      flex: 0 0 auto;
     }
     .gooey-nav-container nav ul {
       display: flex;
@@ -5254,6 +5259,8 @@
       text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
       font-family: 'Cairo', sans-serif;
       white-space: nowrap;       /* nothing wraps onto a new line */
+      flex-wrap: nowrap;
+      min-width: max-content;
     }
     .gooey-nav-container nav ul li {
       border-radius: 100vw;
@@ -8413,189 +8420,1236 @@
       .welcome-greeting { font-size: 15px; }
     }
 
+    /* ═══════════════════════════════════════════════════════════════════════
+       MULTI-ROLE AUTH SYSTEM  ·  Role Selection → Employee → PIN
+       Visual identity matches the existing pharmacy theme (emerald + glass).
+       ═══════════════════════════════════════════════════════════════════════ */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 50%, #ecfdf5 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-y: auto;
+      animation: fadeIn 0.4s ease;
+    }
+    .auth-overlay.hide { opacity: 0; transition: opacity 0.45s ease; pointer-events: none; }
+    .auth-overlay::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 100% 0%, rgba(16, 185, 129, 0.16) 0%, transparent 50%),
+        radial-gradient(ellipse 70% 50% at 0% 100%, rgba(20, 184, 166, 0.14) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    [data-theme="dark"] .auth-overlay { background: linear-gradient(135deg, #0a1612 0%, #0c1a18 50%, #0a1612 100%); }
+    [data-theme="dark"] .auth-overlay::before {
+      background:
+        radial-gradient(ellipse 80% 60% at 100% 0%, rgba(16,185,129,0.18) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 50% at 0% 100%, rgba(20,184,166,0.14) 0%, transparent 55%);
+    }
+    .auth-card {
+      position: relative;
+      z-index: 1;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(24px) saturate(1.4);
+      -webkit-backdrop-filter: blur(24px) saturate(1.4);
+      border: 1px solid rgba(255,255,255,0.85);
+      border-radius: 28px;
+      padding: 42px 32px 36px;
+      width: 100%;
+      max-width: 740px;
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 30px 60px -20px rgba(15, 23, 42, 0.22);
+      text-align: center;
+      animation: authSlideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    [data-theme="dark"] .auth-card {
+      background: rgba(15, 23, 28, 0.92);
+      border-color: rgba(255,255,255,0.08);
+      color: #e2e8f0;
+    }
+    @keyframes authSlideUp {
+      from { opacity: 0; transform: translateY(24px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .auth-step { display: none; }
+    .auth-step.active { display: block; animation: authStepIn 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+    @keyframes authStepIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .auth-brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .auth-logo {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+      color: white;
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; font-weight: 900;
+      box-shadow:
+        0 1px 2px rgba(255,255,255,0.4) inset,
+        0 -2px 6px rgba(0,0,0,0.08) inset,
+        0 8px 20px -4px rgba(16, 185, 129, 0.5);
+      letter-spacing: -0.02em;
+    }
+    .auth-brand-text { text-align: right; }
+    .auth-brand-text h1 { font-size: 22px; font-weight: 900; color: #0b1220; letter-spacing: -0.03em; }
+    .auth-brand-text p { font-size: 12px; color: #64748b; margin-top: 3px; font-weight: 500; }
+    [data-theme="dark"] .auth-brand-text h1 { color: #f1f5f9; }
+    [data-theme="dark"] .auth-brand-text p  { color: #94a3b8; }
+    .auth-title { font-size: 28px; font-weight: 900; color: #0b1220; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .auth-subtitle { font-size: 14px; color: #64748b; margin-bottom: 30px; font-weight: 500; }
+    [data-theme="dark"] .auth-title { color: #f1f5f9; }
+    [data-theme="dark"] .auth-subtitle { color: #94a3b8; }
+    .auth-back-btn {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 12px;
+      padding: 8px 14px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 3;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .auth-back-btn:hover { background: white; transform: translateX(3px); box-shadow: 0 4px 12px -4px rgba(15,23,42,0.15); }
+    [data-theme="dark"] .auth-back-btn { background: rgba(30,41,59,0.75); border-color: rgba(255,255,255,0.1); color: #cbd5e1; }
+    [data-theme="dark"] .auth-back-btn:hover { background: rgba(51,65,85,0.9); }
+
+    /* ───── Role cards ───── */
+    .role-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    .role-card {
+      background: white;
+      border: 2px solid rgba(15,23,42,0.07);
+      border-radius: 22px;
+      padding: 30px 18px 26px;
+      cursor: pointer;
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      font-family: inherit;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .role-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--role-bg-tint, linear-gradient(135deg, rgba(16,185,129,0.04), rgba(6,182,212,0.06)));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .role-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--role-color, #10b981);
+      box-shadow: 0 24px 44px -18px var(--role-shadow, rgba(16,185,129,0.4));
+    }
+    .role-card:hover::after { opacity: 1; }
+    .role-card-icon {
+      width: 76px; height: 76px;
+      background: var(--role-icon-bg, linear-gradient(135deg, #10b981, #34d399));
+      color: white;
+      border-radius: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px;
+      box-shadow: 0 14px 28px -10px var(--role-shadow, rgba(16,185,129,0.45));
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      z-index: 1;
+    }
+    .role-card:hover .role-card-icon { transform: scale(1.1) rotate(-6deg); }
+    .role-card h3 { font-size: 18px; font-weight: 900; color: #0b1220; position: relative; z-index: 1; }
+    .role-card p { font-size: 12px; color: #64748b; line-height: 1.5; position: relative; z-index: 1; font-weight: 500; }
+    [data-theme="dark"] .role-card { background: rgba(30,41,59,0.7); border-color: rgba(255,255,255,0.08); }
+    [data-theme="dark"] .role-card h3 { color: #f1f5f9; }
+    [data-theme="dark"] .role-card p { color: #94a3b8; }
+    .role-card[data-role="pharmacist"] { --role-color: #10b981; --role-icon-bg: linear-gradient(135deg,#10b981,#34d399); --role-shadow: rgba(16,185,129,0.45); --role-bg-tint: linear-gradient(135deg, rgba(16,185,129,0.05), rgba(52,211,153,0.07)); }
+    .role-card[data-role="accountant"] { --role-color: #3b82f6; --role-icon-bg: linear-gradient(135deg,#3b82f6,#60a5fa); --role-shadow: rgba(59,130,246,0.45); --role-bg-tint: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(96,165,250,0.07)); }
+    .role-card[data-role="owner"]      { --role-color: #d97706; --role-icon-bg: linear-gradient(135deg,#f59e0b,#fbbf24); --role-shadow: rgba(245,158,11,0.5);  --role-bg-tint: linear-gradient(135deg, rgba(245,158,11,0.05), rgba(251,191,36,0.08)); }
+
+    /* ───── Employee selection grid ───── */
+    .employee-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 14px;
+      max-height: 56vh;
+      overflow-y: auto;
+      padding: 4px;
+      margin-top: 8px;
+    }
+    .employee-pick {
+      background: white;
+      border: 2px solid rgba(15,23,42,0.07);
+      border-radius: 18px;
+      padding: 22px 14px 18px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+    .employee-pick:hover {
+      transform: translateY(-3px);
+      border-color: var(--role-color, #10b981);
+      box-shadow: 0 14px 28px -10px var(--role-shadow, rgba(16,185,129,0.35));
+    }
+    [data-theme="dark"] .employee-pick { background: rgba(30,41,59,0.7); border-color: rgba(255,255,255,0.08); }
+    .employee-pick .emp-avatar {
+      width: 60px; height: 60px;
+      background: linear-gradient(135deg, var(--role-color, #10b981) 0%, var(--role-color-light, #34d399) 100%);
+      color: white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      font-weight: 900;
+      box-shadow: 0 8px 18px -6px var(--role-shadow, rgba(16,185,129,0.4));
+    }
+    .employee-pick strong { font-size: 15px; color: #0b1220; font-weight: 800; }
+    .employee-pick small { font-size: 11px; color: #64748b; font-weight: 600; }
+    [data-theme="dark"] .employee-pick strong { color: #f1f5f9; }
+    [data-theme="dark"] .employee-pick small  { color: #94a3b8; }
+    .employee-pick[data-status="suspended"] {
+      opacity: 0.55;
+      cursor: not-allowed;
+      filter: grayscale(0.4);
+    }
+    .employee-pick[data-status="suspended"]:hover { transform: none; box-shadow: none; }
+    .employees-empty {
+      grid-column: 1 / -1;
+      padding: 40px 20px;
+      color: #64748b;
+      font-size: 14px;
+      text-align: center;
+    }
+    .employees-empty .icon { font-size: 40px; margin-bottom: 8px; opacity: 0.6; }
+
+    /* ───── PIN entry screen ───── */
+    .pin-step {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding-top: 8px;
+    }
+    .pin-step.active { display: flex; }
+    .pin-step .pin-avatar-big {
+      width: 96px; height: 96px;
+      background: linear-gradient(135deg, var(--role-color, #10b981) 0%, var(--role-color-light, #34d399) 100%);
+      color: white;
+      border-radius: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 44px;
+      font-weight: 900;
+      box-shadow: 0 16px 32px -10px var(--role-shadow, rgba(16,185,129,0.5));
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+    .pin-step h2 { font-size: 24px; font-weight: 900; color: #0b1220; letter-spacing: -0.02em; }
+    [data-theme="dark"] .pin-step h2 { color: #f1f5f9; }
+    .pin-step .pin-role-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      background: var(--role-soft, rgba(16,185,129,0.12));
+      color: var(--role-color-dark, #047857);
+    }
+    .pin-step .pin-hint { font-size: 13px; color: #64748b; }
+    [data-theme="dark"] .pin-step .pin-hint { color: #94a3b8; }
+    .pin-inputs-new {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 8px;
+      direction: ltr;
+    }
+    .pin-inputs-new.shake { animation: pinShake 0.5s cubic-bezier(.36,.07,.19,.97); }
+    @keyframes pinShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
+    }
+    .pin-digit-new {
+      width: 58px;
+      height: 68px;
+      border: 2px solid rgba(15,23,42,0.1);
+      border-radius: 16px;
+      background: white;
+      font-size: 28px;
+      font-weight: 900;
+      text-align: center;
+      color: #0b1220;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      -webkit-text-security: disc;
+    }
+    .pin-digit-new:focus {
+      outline: none;
+      border-color: var(--role-color, #10b981);
+      box-shadow: 0 0 0 4px var(--role-soft, rgba(16,185,129,0.12)), 0 8px 18px -8px var(--role-shadow, rgba(16,185,129,0.35));
+      transform: translateY(-2px);
+    }
+    .pin-digit-new.filled {
+      background: var(--role-color, #10b981);
+      color: white;
+      border-color: var(--role-color, #10b981);
+    }
+    [data-theme="dark"] .pin-digit-new { background: rgba(30,41,59,0.85); border-color: rgba(255,255,255,0.1); color: #f1f5f9; }
+    .pin-msg-new {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 6px;
+      min-height: 20px;
+      font-weight: 600;
+    }
+    .pin-msg-new.error { color: #ef4444; font-weight: 800; }
+    .pin-msg-new.success { color: #10b981; font-weight: 800; }
+
+    .pin-step[data-role="pharmacist"] { --role-color:#10b981; --role-color-light:#34d399; --role-color-dark:#047857; --role-soft:rgba(16,185,129,0.12); --role-shadow:rgba(16,185,129,0.5); }
+    .pin-step[data-role="accountant"] { --role-color:#3b82f6; --role-color-light:#60a5fa; --role-color-dark:#1d4ed8; --role-soft:rgba(59,130,246,0.12); --role-shadow:rgba(59,130,246,0.5); }
+    .pin-step[data-role="owner"]      { --role-color:#d97706; --role-color-light:#fbbf24; --role-color-dark:#b45309; --role-soft:rgba(245,158,11,0.15); --role-shadow:rgba(245,158,11,0.5); }
+    .employee-pick[data-role="pharmacist"] { --role-color:#10b981; --role-color-light:#34d399; --role-shadow:rgba(16,185,129,0.4); }
+    .employee-pick[data-role="accountant"] { --role-color:#3b82f6; --role-color-light:#60a5fa; --role-shadow:rgba(59,130,246,0.4); }
+    .employee-pick[data-role="owner"]      { --role-color:#d97706; --role-color-light:#fbbf24; --role-shadow:rgba(245,158,11,0.45); }
+
+    /* ─── Floating User Pill — placed BELOW the navbar (top-left dead zone) ───
+       The desktop GooeyNav lives at top:18px with a tall pill (~48px). The
+       previous pill at top:22px overlapped it. Now we sit clearly below the
+       navbar so it never covers menu items, and stay flush-left so it sits in
+       the page's left dead margin (the content has its own internal padding). */
+    .user-pill {
+      position: fixed;
+      top: 86px;
+      left: 22px;
+      z-index: 55;         /* sits BELOW navbar (which is higher) so it never covers it */
+      display: none;       /* shown only after login (via JS) */
+      align-items: center;
+      gap: 10px;
+      padding: 7px 14px 7px 8px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px) saturate(1.5);
+      -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      border: 1px solid var(--border-soft);
+      border-radius: 999px;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 4px 12px -2px rgba(15, 23, 42, 0.08),
+        0 12px 28px -12px rgba(15, 23, 42, 0.15);
+      transition: transform 0.25s var(--ease-smooth), box-shadow 0.25s var(--ease-smooth);
+      max-width: calc(100vw - 44px);
+    }
+    .user-pill.visible { display: inline-flex; }
+    .user-pill:hover { transform: translateY(-2px); box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.12), 0 16px 32px -10px rgba(15, 23, 42, 0.2); }
+    .user-pill .up-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--role-color, #10b981), var(--role-color-light, #34d399));
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .user-pill .up-text {
+      display: flex; flex-direction: column; line-height: 1.1; text-align: right;
+    }
+    .user-pill .up-name { font-size: 13px; font-weight: 800; color: #0b1220; }
+    .user-pill .up-role { font-size: 10px; color: #64748b; font-weight: 600; margin-top: 1px; }
+    [data-theme="dark"] .user-pill { background: rgba(30,41,59,0.85); border-color: rgba(255,255,255,0.1); }
+    [data-theme="dark"] .user-pill .up-name { color: #f1f5f9; }
+    [data-theme="dark"] .user-pill .up-role { color: #94a3b8; }
+    .user-pill[data-role="pharmacist"] { --role-color:#10b981; --role-color-light:#34d399; }
+    .user-pill[data-role="accountant"] { --role-color:#3b82f6; --role-color-light:#60a5fa; }
+    .user-pill[data-role="owner"]      { --role-color:#d97706; --role-color-light:#fbbf24; }
+
+    .user-menu {
+      position: fixed;
+      top: 138px;     /* directly under the repositioned pill */
+      left: 22px;
+      z-index: 80;    /* dropdown ABOVE navbar so it isn't clipped when open */
+      min-width: 220px;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(20px) saturate(1.5);
+      -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 8px;
+      box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.18);
+      opacity: 0; pointer-events: none;
+      transform: translateY(-6px) scale(0.96);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+    .user-menu.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+    [data-theme="dark"] .user-menu { background: rgba(15,23,28,0.96); border-color: rgba(255,255,255,0.08); }
+    .user-menu-info {
+      padding: 10px 12px 12px;
+      border-bottom: 1px solid var(--border-soft);
+      margin-bottom: 6px;
+    }
+    .user-menu-info strong { font-size: 14px; color: #0b1220; font-weight: 800; display: block; }
+    .user-menu-info span   { font-size: 11px; color: #64748b; font-weight: 600; display: block; margin-top: 2px; }
+    [data-theme="dark"] .user-menu-info strong { color: #f1f5f9; }
+    [data-theme="dark"] .user-menu-info span   { color: #94a3b8; }
+    .user-menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+      text-align: right;
+    }
+    .user-menu-item:hover { background: rgba(15,23,42,0.05); }
+    .user-menu-item.danger { color: #b91c1c; }
+    .user-menu-item.danger:hover { background: rgba(239,68,68,0.12); color: #991b1b; }
+    [data-theme="dark"] .user-menu-item { color: #cbd5e1; }
+    [data-theme="dark"] .user-menu-item:hover { background: rgba(255,255,255,0.06); }
+
+    /* ───── Role badges (used in employees page + nav) ───── */
+    .role-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .role-tag.pharmacist { background: rgba(16,185,129,0.13); color: #047857; }
+    .role-tag.accountant { background: rgba(59,130,246,0.13); color: #1d4ed8; }
+    .role-tag.owner      { background: linear-gradient(135deg, rgba(245,158,11,0.16), rgba(251,191,36,0.16)); color: #b45309; }
+    [data-theme="dark"] .role-tag.pharmacist { background: rgba(16,185,129,0.22); color: #34d399; }
+    [data-theme="dark"] .role-tag.accountant { background: rgba(59,130,246,0.22); color: #93c5fd; }
+    [data-theme="dark"] .role-tag.owner      { background: rgba(245,158,11,0.22); color: #fbbf24; }
+    .emp-status-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .emp-status-tag.active    { background: rgba(16,185,129,0.13); color: #047857; }
+    .emp-status-tag.suspended { background: rgba(239,68,68,0.13);  color: #b91c1c; }
+    .emp-status-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* ───── Employees page ───── */
+    .employees-toolbar {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    .employees-toolbar .search-box { flex: 1; min-width: 220px; }
+    .emp-table-wrapper { overflow-x: auto; padding: 4px; }
+    .emp-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 720px;
+    }
+    .emp-table thead { background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(20,184,166,0.1)); }
+    .emp-table th {
+      text-align: right;
+      padding: 13px 16px;
+      font-weight: 800;
+      color: #047857;
+      font-size: 12.5px;
+      letter-spacing: -0.005em;
+    }
+    .emp-table th:first-child { border-top-right-radius: 14px; }
+    .emp-table th:last-child  { border-top-left-radius: 14px; }
+    .emp-table td {
+      padding: 14px 16px;
+      border-top: 1px solid rgba(15,23,42,0.06);
+      font-size: 14px;
+      color: #0b1220;
+      background: rgba(255,255,255,0.5);
+    }
+    .emp-table tbody tr:hover td { background: rgba(16,185,129,0.05); }
+    [data-theme="dark"] .emp-table th { color: #34d399; background: rgba(16,185,129,0.18); }
+    [data-theme="dark"] .emp-table td { color: #e2e8f0; background: rgba(30,41,59,0.5); border-top-color: rgba(255,255,255,0.06); }
+    [data-theme="dark"] .emp-table tbody tr:hover td { background: rgba(16,185,129,0.1); }
+    .emp-name-cell { display: flex; align-items: center; gap: 12px; }
+    .emp-avatar-sm {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--role-color, #10b981), var(--role-color-light, #34d399));
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900;
+      font-size: 16px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px -3px var(--role-shadow, rgba(16,185,129,0.4));
+    }
+    .emp-name-cell[data-role="pharmacist"] { --role-color:#10b981; --role-color-light:#34d399; --role-shadow:rgba(16,185,129,0.45); }
+    .emp-name-cell[data-role="accountant"] { --role-color:#3b82f6; --role-color-light:#60a5fa; --role-shadow:rgba(59,130,246,0.45); }
+    .emp-name-cell[data-role="owner"]      { --role-color:#d97706; --role-color-light:#fbbf24; --role-shadow:rgba(245,158,11,0.5);  }
+    .emp-name-cell strong { font-size: 14.5px; font-weight: 800; color: inherit; }
+    .emp-name-cell small  { display: block; font-size: 11px; color: #64748b; font-weight: 500; margin-top: 1px; }
+    [data-theme="dark"] .emp-name-cell small { color: #94a3b8; }
+
+    .emp-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .emp-action-btn {
+      padding: 7px 11px;
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(255,255,255,0.8);
+      color: #334155;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .emp-action-btn:hover { background: white; transform: translateY(-1px); box-shadow: 0 4px 10px -4px rgba(15,23,42,0.18); }
+    .emp-action-btn.danger { color: #b91c1c; background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+    .emp-action-btn.danger:hover { background: #ef4444; color: white; border-color: #ef4444; }
+    .emp-action-btn.warn { color: #b45309; background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.22); }
+    .emp-action-btn.warn:hover { background: #f59e0b; color: white; border-color: #f59e0b; }
+    .emp-action-btn.success { color: #047857; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.22); }
+    .emp-action-btn.success:hover { background: #10b981; color: white; border-color: #10b981; }
+    [data-theme="dark"] .emp-action-btn { background: rgba(30,41,59,0.7); color: #cbd5e1; border-color: rgba(255,255,255,0.08); }
+
+    /* Employees mobile cards */
+    .emp-mobile-list { display: none; padding: 4px; }
+    .emp-mobile-card {
+      background: rgba(255,255,255,0.85);
+      border: 1px solid rgba(15,23,42,0.07);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 6px 18px -10px rgba(15,23,42,0.15);
+    }
+    [data-theme="dark"] .emp-mobile-card { background: rgba(30,41,59,0.7); border-color: rgba(255,255,255,0.07); }
+    .emp-mobile-card-top {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+    }
+    .emp-mobile-card-top strong { font-size: 16px; font-weight: 800; color: #0b1220; display: block; }
+    .emp-mobile-card-top small  { font-size: 11px; color: #64748b; display: block; margin-top: 2px; }
+    [data-theme="dark"] .emp-mobile-card-top strong { color: #f1f5f9; }
+    [data-theme="dark"] .emp-mobile-card-top small  { color: #94a3b8; }
+    .emp-mobile-card-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .emp-mobile-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .emp-mobile-card-actions .emp-action-btn { flex: 1; justify-content: center; min-width: 0; }
+    .emp-mobile-empty {
+      text-align: center;
+      padding: 50px 20px;
+      color: #64748b;
+    }
+    .emp-mobile-empty .icon { font-size: 48px; opacity: 0.6; margin-bottom: 10px; }
+
+    .employees-empty-state {
+      text-align: center;
+      padding: 60px 24px;
+      color: #64748b;
+    }
+    .employees-empty-state .ee-icon {
+      font-size: 56px;
+      opacity: 0.5;
+      margin-bottom: 14px;
+    }
+    .employees-empty-state h3 { font-size: 18px; font-weight: 800; color: #334155; margin-bottom: 6px; }
+    .employees-empty-state p  { font-size: 13.5px; color: #64748b; max-width: 380px; margin: 0 auto; }
+    [data-theme="dark"] .employees-empty-state h3 { color: #e2e8f0; }
+    [data-theme="dark"] .employees-empty-state p  { color: #94a3b8; }
+
+    /* Accountant placeholder card */
+    .accountant-placeholder-card {
+      text-align: center;
+      padding: 60px 30px;
+      max-width: 540px;
+      margin: 24px auto;
+    }
+    .accountant-placeholder-card .ap-icon {
+      width: 86px; height: 86px;
+      margin: 0 auto 18px;
+      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+      color: white;
+      border-radius: 24px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px;
+      box-shadow: 0 18px 36px -14px rgba(59,130,246,0.5);
+    }
+    .accountant-placeholder-card h3 { font-size: 22px; font-weight: 900; color: #0b1220; margin-bottom: 8px; }
+    .accountant-placeholder-card p  { font-size: 14px; color: #64748b; line-height: 1.6; }
+    [data-theme="dark"] .accountant-placeholder-card h3 { color: #f1f5f9; }
+    [data-theme="dark"] .accountant-placeholder-card p  { color: #94a3b8; }
+
+    /* ─── Responsive — mobile ─── */
+    @media (max-width: 720px) {
+      .auth-card { padding: 32px 22px 26px; border-radius: 22px; }
+      .role-cards { grid-template-columns: 1fr; gap: 14px; }
+      .role-card { padding: 22px 16px 18px; }
+      .role-card-icon { width: 64px; height: 64px; font-size: 30px; border-radius: 18px; }
+      .auth-title { font-size: 22px; }
+      .auth-subtitle { font-size: 13px; margin-bottom: 24px; }
+      .pin-step .pin-avatar-big { width: 84px; height: 84px; font-size: 38px; border-radius: 24px; }
+      .pin-step h2 { font-size: 20px; }
+      .pin-digit-new { width: 50px; height: 60px; font-size: 24px; border-radius: 14px; }
+      .pin-inputs-new { gap: 10px; }
+      .auth-back-btn { top: 14px; right: 14px; padding: 6px 12px; font-size: 12px; }
+      .employee-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .employee-pick { padding: 16px 10px 14px; }
+      .employee-pick .emp-avatar { width: 50px; height: 50px; font-size: 22px; }
+      .auth-brand { margin-bottom: 22px; gap: 10px; }
+      .auth-logo { width: 48px; height: 48px; font-size: 24px; border-radius: 14px; }
+      .auth-brand-text h1 { font-size: 18px; }
+      .auth-brand-text p  { font-size: 11px; }
+      /* Employees page becomes cards */
+      .emp-table-wrapper { display: none; }
+      .emp-mobile-list   { display: block; }
+      .employees-toolbar { padding: 14px; gap: 10px; }
+      /* User pill — placed under the mobile navbar (~52px tall) so it never overlaps. */
+      .user-pill { top: 72px; left: 12px; padding: 5px 11px 5px 6px; max-width: calc(100vw - 24px); }
+      .user-pill .up-avatar { width: 28px; height: 28px; font-size: 12px; }
+      .user-pill .up-name { font-size: 12px; }
+      .user-pill .up-role { font-size: 9.5px; }
+      .user-menu { top: 122px; left: 12px; min-width: 200px; max-width: calc(100vw - 24px); }
+    }
+    @media (max-width: 420px) {
+      .pin-digit-new { width: 44px; height: 54px; font-size: 22px; }
+      .pin-inputs-new { gap: 8px; }
+      .auth-card { padding: 26px 18px 22px; }
+    }
+    /* Hide existing IT/admin emoji label badge in welcome screen for non-owner */
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       ACCOUNTANT MODULE  ·  shared visual identity with the owner pages
+       ═══════════════════════════════════════════════════════════════════════ */
+    .acc-stats-grid { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 1100px) { .acc-stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px)  { .acc-stats-grid { grid-template-columns: 1fr; } }
+
+    /* Generic accountant table — matches employee + invoice tables */
+    .acc-table-wrapper { overflow-x: auto; padding: 4px; }
+    .acc-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 720px;
+    }
+    .acc-table thead { background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(20,184,166,0.1)); }
+    .acc-table th {
+      text-align: right;
+      padding: 13px 16px;
+      font-weight: 800;
+      color: #047857;
+      font-size: 12.5px;
+    }
+    .acc-table th:first-child { border-top-right-radius: 14px; }
+    .acc-table th:last-child  { border-top-left-radius: 14px; }
+    .acc-table th.num { text-align: center; }
+    .acc-table td {
+      padding: 14px 16px;
+      border-top: 1px solid rgba(15,23,42,0.06);
+      font-size: 14px;
+      color: #0b1220;
+      background: rgba(255,255,255,0.5);
+    }
+    .acc-table td.num { text-align: center; font-variant-numeric: tabular-nums; }
+    .acc-table tbody tr:hover td { background: rgba(16,185,129,0.05); }
+    [data-theme="dark"] .acc-table th { color: #34d399; background: rgba(16,185,129,0.18); }
+    [data-theme="dark"] .acc-table td { color: #e2e8f0; background: rgba(30,41,59,0.5); border-top-color: rgba(255,255,255,0.06); }
+    [data-theme="dark"] .acc-table tbody tr:hover td { background: rgba(16,185,129,0.1); }
+
+    .acc-empty-state {
+      text-align: center;
+      padding: 50px 24px;
+      color: #64748b;
+    }
+    .acc-empty-state .icon { font-size: 48px; opacity: 0.55; margin-bottom: 10px; }
+    .acc-empty-state h4 { font-size: 17px; font-weight: 800; color: #334155; margin-bottom: 6px; }
+    .acc-empty-state p  { font-size: 13.5px; max-width: 360px; margin: 0 auto; line-height: 1.5; }
+    [data-theme="dark"] .acc-empty-state h4 { color: #e2e8f0; }
+
+    /* Accountant action buttons (reuse emp-action styles) */
+    .acc-action-btn {
+      padding: 7px 11px;
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(255,255,255,0.8);
+      color: #334155;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .acc-action-btn:hover { background: white; transform: translateY(-1px); box-shadow: 0 4px 10px -4px rgba(15,23,42,0.18); }
+    .acc-action-btn.success { color: #047857; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.22); }
+    .acc-action-btn.success:hover { background: #10b981; color: white; border-color: #10b981; }
+    .acc-action-btn.danger { color: #b91c1c; background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+    .acc-action-btn.danger:hover { background: #ef4444; color: white; border-color: #ef4444; }
+    .acc-action-btn.warn { color: #b45309; background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.22); }
+    .acc-action-btn.warn:hover { background: #f59e0b; color: white; border-color: #f59e0b; }
+    [data-theme="dark"] .acc-action-btn { background: rgba(30,41,59,0.7); color: #cbd5e1; border-color: rgba(255,255,255,0.08); }
+
+    /* Status pills for debts / salaries / returns */
+    .pill-status {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .pill-status.paid     { background: rgba(16,185,129,0.13); color: #047857; }
+    .pill-status.unpaid   { background: rgba(239,68,68,0.13);  color: #b91c1c; }
+    .pill-status.partial  { background: rgba(245,158,11,0.15); color: #b45309; }
+    .pill-status.overdue  { background: rgba(139,92,246,0.14); color: #6d28d9; }
+    .pill-status.invoice  { background: rgba(59,130,246,0.13); color: #1d4ed8; }
+    .pill-status.manual   { background: rgba(139,92,246,0.14); color: #6d28d9; }
+    .pill-status .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    [data-theme="dark"] .pill-status.paid    { background: rgba(16,185,129,0.22); color: #34d399; }
+    [data-theme="dark"] .pill-status.unpaid  { background: rgba(239,68,68,0.22);  color: #fca5a5; }
+    [data-theme="dark"] .pill-status.partial { background: rgba(245,158,11,0.22); color: #fbbf24; }
+    [data-theme="dark"] .pill-status.overdue { background: rgba(139,92,246,0.25); color: #c4b5fd; }
+    [data-theme="dark"] .pill-status.invoice { background: rgba(59,130,246,0.22); color: #93c5fd; }
+    [data-theme="dark"] .pill-status.manual  { background: rgba(139,92,246,0.25); color: #c4b5fd; }
+
+    .amount-cell {
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: #0b1220;
+    }
+    .amount-cell.expense, .amount-cell.remaining, .amount-cell.unpaid { color: #b45309; }
+    .amount-cell.income,  .amount-cell.paid,      .amount-cell.profit  { color: #047857; }
+    .amount-cell.negative { color: #b91c1c; }
+    [data-theme="dark"] .amount-cell { color: #e2e8f0; }
+    [data-theme="dark"] .amount-cell.expense, [data-theme="dark"] .amount-cell.remaining, [data-theme="dark"] .amount-cell.unpaid { color: #fbbf24; }
+    [data-theme="dark"] .amount-cell.income, [data-theme="dark"] .amount-cell.paid,      [data-theme="dark"] .amount-cell.profit  { color: #34d399; }
+    [data-theme="dark"] .amount-cell.negative { color: #fca5a5; }
+
+    .search-month-input {
+      padding: 9px 12px;
+      border: 1px solid rgba(0, 168, 107, 0.2);
+      background: rgba(255, 255, 255, 0.75);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text-dark);
+    }
+    [data-theme="dark"] .search-month-input { background: rgba(30,41,59,0.7); border-color: rgba(255,255,255,0.1); color: #f1f5f9; }
+
+    /* Mobile cards for all accountant tables */
+    .acc-mobile-list { display: none; padding: 4px; }
+    .acc-mobile-card {
+      background: rgba(255,255,255,0.85);
+      border: 1px solid rgba(15,23,42,0.07);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 6px 18px -10px rgba(15,23,42,0.15);
+    }
+    [data-theme="dark"] .acc-mobile-card { background: rgba(30,41,59,0.7); border-color: rgba(255,255,255,0.07); }
+    .acc-mobile-card-top {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px;
+    }
+    .acc-mobile-card-top strong { font-size: 15.5px; font-weight: 800; color: #0b1220; display: block; }
+    .acc-mobile-card-top small  { font-size: 11.5px; color: #64748b; display: block; margin-top: 2px; }
+    [data-theme="dark"] .acc-mobile-card-top strong { color: #f1f5f9; }
+    [data-theme="dark"] .acc-mobile-card-top small  { color: #94a3b8; }
+    .acc-mobile-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .acc-mobile-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px;
+      padding: 6px 0;
+      border-bottom: 1px dashed rgba(15,23,42,0.06);
+    }
+    .acc-mobile-row:last-child { border-bottom: none; }
+    .acc-mobile-row .lbl { color: #64748b; font-weight: 600; font-size: 12px; }
+    .acc-mobile-row .val { color: #0b1220; font-weight: 700; }
+    [data-theme="dark"] .acc-mobile-row .lbl { color: #94a3b8; }
+    [data-theme="dark"] .acc-mobile-row .val { color: #f1f5f9; }
+    .acc-mobile-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .acc-mobile-actions .acc-action-btn { flex: 1; justify-content: center; min-width: 0; }
+
+    @media (max-width: 768px) {
+      .acc-table-wrapper { display: none; }
+      .acc-mobile-list   { display: block; }
+    }
+
+    /* ───── Export cards page ───── */
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
+    .export-card {
+      padding: 26px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .export-card:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -16px rgba(15,23,42,0.18); }
+    .export-card .export-icon {
+      width: 64px; height: 64px;
+      background: var(--exp-color, #10b981);
+      color: white;
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px;
+      box-shadow: 0 12px 24px -10px var(--exp-color, rgba(16,185,129,0.4));
+      margin-bottom: 4px;
+    }
+    .export-card h4 { font-size: 17px; font-weight: 900; color: #0b1220; }
+    .export-card p  { font-size: 13px; color: #64748b; line-height: 1.5; flex: 1; }
+    [data-theme="dark"] .export-card h4 { color: #f1f5f9; }
+    [data-theme="dark"] .export-card p  { color: #94a3b8; }
+    .export-actions {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      margin-top: 4px;
+    }
+    .export-actions .btn { flex: 1; justify-content: center; padding: 9px 14px; font-size: 13px; }
+
+    @media (max-width: 480px) {
+      .export-card { padding: 20px 18px; }
+      .export-card .export-icon { width: 56px; height: 56px; font-size: 26px; border-radius: 16px; }
+    }
+
   </style>
 </head>
 <body>
-  <!-- ═════════════════════ PIN LOCK SCREEN ═════════════════════ -->
-  <div class="pin-lock-overlay" id="pinLockOverlay" role="dialog" aria-modal="true" aria-labelledby="pinLockTitle">
-    <div class="pin-lock-card">
-      <div class="pin-lock-icon">🔒</div>
-      <h2 class="pin-lock-title" id="pinLockTitle">صيدليتي</h2>
-      <p class="pin-lock-subtitle">أدخل رمز الدخول للوصول إلى النظام</p>
-      <div class="pin-inputs" id="pinInputs">
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit" autocomplete="off" aria-label="الرقم الأول" />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit" autocomplete="off" aria-label="الرقم الثاني" />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit" autocomplete="off" aria-label="الرقم الثالث" />
-        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit" autocomplete="off" aria-label="الرقم الرابع" />
+  <!-- ═════════════════════ MULTI-ROLE AUTH OVERLAY ═════════════════════ -->
+  <div class="auth-overlay" id="authOverlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="auth-card">
+      <button class="auth-back-btn" id="authBackBtn" type="button" style="display:none;">
+        رجوع ←
+      </button>
+
+      <!-- Step 1: Role Selection -->
+      <div class="auth-step active" data-step="role">
+        <div class="auth-brand">
+          <div class="auth-logo">℞</div>
+          <div class="auth-brand-text">
+            <h1>صيدليتي</h1>
+            <p>نظام الإدارة الاحترافي</p>
+          </div>
+        </div>
+        <h2 class="auth-title" id="authTitle">اختر دورك للمتابعة</h2>
+        <p class="auth-subtitle">حدد منصبك للدخول إلى لوحة التحكم المخصصة</p>
+        <div class="role-cards">
+          <button class="role-card" data-role="pharmacist" type="button" aria-label="صيدلاني">
+            <div class="role-card-icon">💊</div>
+            <h3>صيدلاني</h3>
+            <p>إدارة الأدوية والمبيعات والنواقص</p>
+          </button>
+          <button class="role-card" data-role="accountant" type="button" aria-label="محاسب">
+            <div class="role-card-icon">🧮</div>
+            <h3>محاسب</h3>
+            <p>إدارة الفواتير والتقارير المالية</p>
+          </button>
+          <button class="role-card" data-role="owner" type="button" aria-label="الأونر / المدير">
+            <div class="role-card-icon">👑</div>
+            <h3>الأونر / المدير</h3>
+            <p>صلاحيات كاملة على كل النظام</p>
+          </button>
+        </div>
       </div>
-      <p class="pin-message" id="pinMessage">أدخل الرمز المكوّن من 4 أرقام</p>
-      <div class="pin-footer">© 2026 صيدليتي · نظام محمي</div>
+
+      <!-- Step 2: Employee Selection -->
+      <div class="auth-step" data-step="employee">
+        <div class="auth-brand">
+          <div class="auth-logo">℞</div>
+          <div class="auth-brand-text">
+            <h1>صيدليتي</h1>
+            <p id="authRoleSubtitle">اختر حسابك</p>
+          </div>
+        </div>
+        <h2 class="auth-title">اختر اسمك للمتابعة</h2>
+        <p class="auth-subtitle">حدد حسابك لإدخال رمز الدخول الخاص بك</p>
+        <div class="employee-grid" id="authEmployeeGrid"></div>
+      </div>
+
+      <!-- Step 3: PIN Entry -->
+      <div class="auth-step pin-step" data-step="pin">
+        <div class="pin-avatar-big" id="authPinAvatar">ح</div>
+        <h2>مرحباً، <span id="authPinEmpName">—</span></h2>
+        <span class="pin-role-line" id="authPinRoleLine"><span class="emoji">👑</span> <span id="authPinRoleLabel">—</span></span>
+        <p class="pin-hint">أدخل رمز الدخول الخاص بك (4 أرقام)</p>
+        <div class="pin-inputs-new" id="authPinInputs">
+          <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-new" autocomplete="off" aria-label="الرقم الأول" />
+          <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-new" autocomplete="off" aria-label="الرقم الثاني" />
+          <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-new" autocomplete="off" aria-label="الرقم الثالث" />
+          <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="pin-digit-new" autocomplete="off" aria-label="الرقم الرابع" />
+        </div>
+        <p class="pin-msg-new" id="authPinMsg">&nbsp;</p>
+      </div>
     </div>
   </div>
 
   <script>
-    (function () {
-      // ───── Users (PIN → profile) ─────
-      const USERS = {
-        '1188': {
-          name: 'حيدر',
-          title: 'المدير',
-          greeting: 'مرحباً بعودتك',
-          initial: 'ح',
-          isAdmin: true,
-        },
-        '1122': {
-          name: 'محمد',
-          title: 'موظف IT',
-          greeting: 'أهلاً بك',
-          initial: 'م',
-          isAdmin: false,
-        },
+    /* ════════════════════════════════════════════════════════════════
+       Multi-role Auth + Employee directory (localStorage-backed).
+       Default owner: حيدر / PIN 1188  (matches the legacy login PIN
+       so the user is never locked out).
+       Session keys reused so existing isAdmin()/getCurrentUser() keep working.
+       ════════════════════════════════════════════════════════════════ */
+    window.PharmacyAuth = (function () {
+      const EMPLOYEES_KEY = 'pharmacy_employees';
+      const SESSION_KEY   = 'pharmacy_pin_unlocked';
+      const USER_KEY      = 'pharmacy_current_user';
+      const WELCOME_DURATION = 1000;
+
+      const ROLE_META = {
+        pharmacist: { label: 'صيدلاني', icon: '💊', cls: 'pharmacist' },
+        accountant: { label: 'محاسب',   icon: '🧮', cls: 'accountant' },
+        owner:      { label: 'المدير',  icon: '👑', cls: 'owner' },
       };
-      const WELCOME_DURATION = 1000; // 1 second
-      const SESSION_KEY = 'pharmacy_pin_unlocked';
-      const USER_KEY = 'pharmacy_current_user';
 
-      const overlay = document.getElementById('pinLockOverlay');
-      const inputsWrap = document.getElementById('pinInputs');
-      const digits = Array.from(inputsWrap.querySelectorAll('.pin-digit'));
-      const msg = document.getElementById('pinMessage');
-
-      // Skip if already unlocked this session
-      try {
-        if (sessionStorage.getItem(SESSION_KEY) === '1') {
-          overlay.remove();
-          return;
+      // ── Storage helpers ───────────────────────────────────────────
+      function loadEmployees() {
+        try {
+          const raw = localStorage.getItem(EMPLOYEES_KEY);
+          const arr = raw ? JSON.parse(raw) : [];
+          return Array.isArray(arr) ? arr : [];
+        } catch (_) { return []; }
+      }
+      function saveEmployees(list) {
+        try { localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(list)); }
+        catch (_) {}
+      }
+      function ensureDefaultOwner() {
+        const list = loadEmployees();
+        const hasOwner = list.some(e => e.role === 'owner' && e.status === 'active');
+        if (!hasOwner) {
+          // Default owner mirrors the legacy login (حيدر · 1188) so the user
+          // is never locked out after the migration.
+          list.push({
+            id: 'emp_default_owner',
+            name: 'حيدر',
+            role: 'owner',
+            pin: '1188',
+            status: 'active',
+            createdAt: new Date().toISOString(),
+          });
+          saveEmployees(list);
         }
-      } catch (_) {}
-
-      document.body.classList.add('pin-locked');
-      setTimeout(() => digits[0].focus(), 350);
-
-      function currentCode() { return digits.map(d => d.value).join(''); }
-
-      function clearAll(focusFirst = true) {
-        digits.forEach(d => { d.value = ''; d.classList.remove('filled'); });
-        if (focusFirst) digits[0].focus();
+        return loadEmployees();
       }
 
-      function showError() {
-        msg.textContent = 'الرمز غير صحيح، حاول مرة أخرى';
-        msg.classList.remove('success');
-        msg.classList.add('error');
-        inputsWrap.classList.add('shake');
-        setTimeout(() => {
-          inputsWrap.classList.remove('shake');
-          clearAll(true);
-          msg.textContent = 'أدخل الرمز المكوّن من 4 أرقام';
-          msg.classList.remove('error');
-        }, 650);
+      function newId() {
+        return 'emp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+      }
+
+      function getInitial(name) {
+        if (!name) return '؟';
+        const ch = String(name).trim().charAt(0);
+        return ch || '؟';
+      }
+
+      // ── Auth state machine ────────────────────────────────────────
+      let selectedRole = null;
+      let selectedEmp  = null;
+
+      const overlay = document.getElementById('authOverlay');
+      const backBtn = document.getElementById('authBackBtn');
+      const stepRole     = overlay.querySelector('[data-step="role"]');
+      const stepEmp      = overlay.querySelector('[data-step="employee"]');
+      const stepPin      = overlay.querySelector('[data-step="pin"]');
+      const empGrid      = document.getElementById('authEmployeeGrid');
+      const pinInputsWrap= document.getElementById('authPinInputs');
+      const pinDigits    = Array.from(pinInputsWrap.querySelectorAll('.pin-digit-new'));
+      const pinMsg       = document.getElementById('authPinMsg');
+      const pinAvatar    = document.getElementById('authPinAvatar');
+      const pinEmpName   = document.getElementById('authPinEmpName');
+      const pinRoleLabel = document.getElementById('authPinRoleLabel');
+      const pinRoleLine  = document.getElementById('authPinRoleLine');
+      const roleSubtitle = document.getElementById('authRoleSubtitle');
+
+      function showStep(step) {
+        [stepRole, stepEmp, stepPin].forEach(el => el.classList.remove('active'));
+        if (step === 'role')     { stepRole.classList.add('active'); backBtn.style.display = 'none'; }
+        if (step === 'employee') { stepEmp.classList.add('active');  backBtn.style.display = 'inline-flex'; }
+        if (step === 'pin')      { stepPin.classList.add('active');  backBtn.style.display = 'inline-flex'; }
+      }
+
+      function renderEmployeeStep(role) {
+        const list = loadEmployees().filter(e => e.role === role);
+        const meta = ROLE_META[role];
+        roleSubtitle.textContent = `حسابات ${meta.label}`;
+        if (list.length === 0) {
+          empGrid.innerHTML = `
+            <div class="employees-empty">
+              <div class="icon">🚫</div>
+              <p>لا يوجد موظفون مسجّلون بهذا الدور بعد.</p>
+              <p style="margin-top:6px;font-size:12px;">اطلب من المدير إضافة موظف.</p>
+            </div>
+          `;
+          return;
+        }
+        empGrid.innerHTML = list.map(e => `
+          <button class="employee-pick" data-emp-id="${e.id}" data-role="${e.role}" data-status="${e.status}" type="button" ${e.status === 'suspended' ? 'aria-disabled="true"' : ''}>
+            <div class="emp-avatar">${getInitial(e.name)}</div>
+            <strong>${e.name}</strong>
+            <small>${meta.icon} ${meta.label}${e.status === 'suspended' ? ' · موقوف' : ''}</small>
+          </button>
+        `).join('');
+      }
+
+      function clearPin(focusFirst = true) {
+        pinDigits.forEach(d => { d.value = ''; d.classList.remove('filled'); });
+        if (focusFirst) setTimeout(() => pinDigits[0]?.focus(), 50);
+      }
+
+      function showPinStep(emp) {
+        const meta = ROLE_META[emp.role];
+        stepPin.dataset.role = emp.role;
+        pinAvatar.textContent = getInitial(emp.name);
+        pinEmpName.textContent = emp.name;
+        pinRoleLabel.textContent = meta.label;
+        pinRoleLine.querySelector('.emoji').textContent = meta.icon;
+        pinMsg.textContent = ' ';
+        pinMsg.classList.remove('error', 'success');
+        showStep('pin');
+        clearPin(true);
       }
 
       function showWelcome(user) {
-        const adminClass = user.isAdmin ? 'admin' : '';
-        const welcomeOverlay = document.createElement('div');
-        welcomeOverlay.className = 'welcome-overlay';
-        welcomeOverlay.innerHTML = `
+        const adminClass = user.role === 'owner' ? 'admin' : '';
+        const meta = ROLE_META[user.role];
+        const card = document.createElement('div');
+        card.className = 'welcome-overlay';
+        card.innerHTML = `
           <div class="welcome-card">
-            <div class="welcome-avatar ${adminClass}">${user.initial}</div>
-            <p class="welcome-greeting">${user.greeting}</p>
+            <div class="welcome-avatar ${adminClass}">${getInitial(user.name)}</div>
+            <p class="welcome-greeting">مرحباً بعودتك</p>
             <h1 class="welcome-name">${user.name}</h1>
-            <span class="welcome-title ${adminClass}">
-              ${user.isAdmin ? '⭐' : '💼'} ${user.title}
-            </span>
+            <span class="welcome-title ${adminClass}">${meta.icon} ${meta.label}</span>
           </div>
         `;
-        document.body.appendChild(welcomeOverlay);
+        document.body.appendChild(card);
         setTimeout(() => {
-          welcomeOverlay.classList.add('hide');
-          setTimeout(() => welcomeOverlay.remove(), 500);
+          card.classList.add('hide');
+          setTimeout(() => card.remove(), 500);
         }, WELCOME_DURATION);
       }
 
-      function unlock(user) {
-        msg.textContent = '✓ تم التحقق بنجاح';
-        msg.classList.remove('error');
-        msg.classList.add('success');
-        inputsWrap.classList.add('success');
-        digits.forEach(d => d.blur());
+      function unlock(emp) {
+        const userObj = {
+          id: emp.id,
+          name: emp.name,
+          role: emp.role,
+          initial: getInitial(emp.name),
+          isAdmin: emp.role === 'owner',
+          title: ROLE_META[emp.role].label,
+        };
         try {
           sessionStorage.setItem(SESSION_KEY, '1');
-          sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+          sessionStorage.setItem(USER_KEY, JSON.stringify(userObj));
         } catch (_) {}
-
-        // Fade out PIN screen, then show welcome
+        pinMsg.textContent = '✓ تم التحقق بنجاح';
+        pinMsg.classList.remove('error');
+        pinMsg.classList.add('success');
+        pinDigits.forEach(d => d.blur());
         setTimeout(() => {
           overlay.classList.add('hide');
           setTimeout(() => {
-            overlay.remove();
-            showWelcome(user);
-            // Unlock body scroll after welcome completes
+            overlay.style.display = 'none';
+            showWelcome(userObj);
             setTimeout(() => {
               document.body.classList.remove('pin-locked');
+              document.dispatchEvent(new CustomEvent('pharmacy:login', { detail: userObj }));
             }, WELCOME_DURATION + 200);
           }, 500);
         }, 450);
       }
 
-      function validateIfComplete() {
-        const code = currentCode();
-        if (code.length === 4 && digits.every(d => d.value !== '')) {
-          const user = USERS[code];
-          if (user) unlock(user);
-          else showError();
-        }
+      function showPinError(message) {
+        pinMsg.textContent = message || 'الرمز غير صحيح، حاول مرة أخرى';
+        pinMsg.classList.remove('success');
+        pinMsg.classList.add('error');
+        pinInputsWrap.classList.add('shake');
+        setTimeout(() => {
+          pinInputsWrap.classList.remove('shake');
+          clearPin(true);
+          pinMsg.textContent = ' ';
+          pinMsg.classList.remove('error');
+        }, 700);
       }
 
-      digits.forEach((input, idx) => {
-        input.addEventListener('input', (e) => {
-          // Only allow digits
+      function tryPin() {
+        if (!selectedEmp) return;
+        const code = pinDigits.map(d => d.value).join('');
+        if (code.length !== 4) return;
+        // Re-read employee from storage to honor edits/suspension.
+        const live = loadEmployees().find(e => e.id === selectedEmp.id);
+        if (!live) { showPinError('الحساب لم يعد موجوداً'); return; }
+        if (live.status !== 'active') { showPinError('الحساب موقوف — راجع المدير'); return; }
+        if (String(live.pin) !== String(code)) { showPinError('الرمز غير صحيح، حاول مرة أخرى'); return; }
+        unlock(live);
+      }
+
+      // ── Wire UI ───────────────────────────────────────────────────
+      backBtn.addEventListener('click', () => {
+        if (stepPin.classList.contains('active'))      { selectedEmp = null; renderEmployeeStep(selectedRole); showStep('employee'); }
+        else if (stepEmp.classList.contains('active')) { selectedRole = null; showStep('role'); }
+      });
+
+      overlay.querySelectorAll('.role-card').forEach(card => {
+        card.addEventListener('click', () => {
+          selectedRole = card.dataset.role;
+          renderEmployeeStep(selectedRole);
+          showStep('employee');
+        });
+      });
+
+      empGrid.addEventListener('click', (e) => {
+        const btn = e.target.closest('.employee-pick');
+        if (!btn || btn.dataset.status === 'suspended') return;
+        const id = btn.dataset.empId;
+        const emp = loadEmployees().find(x => x.id === id);
+        if (!emp) return;
+        selectedEmp = emp;
+        showPinStep(emp);
+      });
+
+      pinDigits.forEach((input, idx) => {
+        input.addEventListener('input', () => {
           input.value = input.value.replace(/[^0-9]/g, '').slice(0, 1);
           if (input.value) {
             input.classList.add('filled');
-            if (idx < digits.length - 1) digits[idx + 1].focus();
+            if (idx < pinDigits.length - 1) pinDigits[idx + 1].focus();
           } else {
             input.classList.remove('filled');
           }
-          validateIfComplete();
+          if (pinDigits.every(d => d.value !== '')) tryPin();
         });
-
         input.addEventListener('keydown', (e) => {
           if (e.key === 'Backspace' && !input.value && idx > 0) {
-            digits[idx - 1].focus();
-            digits[idx - 1].value = '';
-            digits[idx - 1].classList.remove('filled');
+            pinDigits[idx - 1].focus();
+            pinDigits[idx - 1].value = '';
+            pinDigits[idx - 1].classList.remove('filled');
             e.preventDefault();
-          } else if (e.key === 'ArrowLeft' && idx > 0) {
-            digits[idx - 1].focus();
-            e.preventDefault();
-          } else if (e.key === 'ArrowRight' && idx < digits.length - 1) {
-            digits[idx + 1].focus();
-            e.preventDefault();
-          } else if (e.key === 'Enter') {
-            validateIfComplete();
-          }
+          } else if (e.key === 'ArrowLeft' && idx > 0)  { pinDigits[idx - 1].focus(); e.preventDefault(); }
+          else if (e.key === 'ArrowRight' && idx < pinDigits.length - 1) { pinDigits[idx + 1].focus(); e.preventDefault(); }
+          else if (e.key === 'Enter') { tryPin(); }
         });
-
         input.addEventListener('focus', () => input.select());
-
         input.addEventListener('paste', (e) => {
           e.preventDefault();
           const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 4);
           if (!pasted) return;
-          for (let i = 0; i < digits.length; i++) {
-            digits[i].value = pasted[i] || '';
-            digits[i].classList.toggle('filled', !!pasted[i]);
+          for (let i = 0; i < pinDigits.length; i++) {
+            pinDigits[i].value = pasted[i] || '';
+            pinDigits[i].classList.toggle('filled', !!pasted[i]);
           }
-          const lastFilled = Math.min(pasted.length, digits.length) - 1;
-          if (lastFilled >= 0 && lastFilled < digits.length - 1) {
-            digits[lastFilled + 1].focus();
-          } else {
-            digits[digits.length - 1].focus();
-          }
-          validateIfComplete();
+          const lastFilled = Math.min(pasted.length, pinDigits.length) - 1;
+          if (lastFilled >= 0 && lastFilled < pinDigits.length - 1) pinDigits[lastFilled + 1].focus();
+          else pinDigits[pinDigits.length - 1].focus();
+          if (pinDigits.every(d => d.value !== '')) tryPin();
         });
       });
+
+      // ── Init: bootstrap default owner + check existing session ────
+      ensureDefaultOwner();
+
+      function isAlreadyLoggedIn() {
+        try {
+          if (sessionStorage.getItem(SESSION_KEY) !== '1') return false;
+          const raw = sessionStorage.getItem(USER_KEY);
+          if (!raw) return false;
+          const user = JSON.parse(raw);
+          // Validate user still exists + still active.
+          const live = loadEmployees().find(e => e.id === user.id);
+          if (!live || live.status !== 'active') {
+            sessionStorage.removeItem(SESSION_KEY);
+            sessionStorage.removeItem(USER_KEY);
+            return false;
+          }
+          return true;
+        } catch (_) { return false; }
+      }
+
+      if (isAlreadyLoggedIn()) {
+        // Skip the auth UI entirely.
+        overlay.style.display = 'none';
+        // Notify the rest of the app on next tick (so listeners exist).
+        setTimeout(() => {
+          const user = JSON.parse(sessionStorage.getItem(USER_KEY));
+          document.dispatchEvent(new CustomEvent('pharmacy:login', { detail: user }));
+        }, 0);
+      } else {
+        document.body.classList.add('pin-locked');
+        showStep('role');
+      }
+
+      // ── Public API ────────────────────────────────────────────────
+      return {
+        ROLE_META,
+        loadEmployees,
+        saveEmployees,
+        ensureDefaultOwner,
+        newId,
+        getInitial,
+        logout() {
+          try {
+            sessionStorage.removeItem(SESSION_KEY);
+            sessionStorage.removeItem(USER_KEY);
+          } catch (_) {}
+          location.reload();
+        },
+      };
     })();
   </script>
 
@@ -8621,47 +9675,75 @@
       </button>
     </div>
     <nav>
-      <button class="nav-btn active" data-page="dashboard" title="لوحة التحكم">
+      <button class="nav-btn active" data-page="dashboard" data-roles="owner" title="لوحة التحكم">
         <span class="icon">📊</span>
         <span class="label">لوحة التحكم</span>
       </button>
-      <button class="nav-btn" data-page="medications" title="إدارة الأدوية">
+      <button class="nav-btn" data-page="accountantHome" data-roles="accountant" title="لوحة المحاسب">
+        <span class="icon">🧮</span>
+        <span class="label">لوحة المحاسب</span>
+      </button>
+      <button class="nav-btn" data-page="medications" data-roles="owner pharmacist" title="إدارة الأدوية">
         <span class="icon">💊</span>
         <span class="label">إدارة الأدوية</span>
       </button>
-      <button class="nav-btn" data-page="sales" title="المبيعات">
+      <button class="nav-btn" data-page="sales" data-roles="owner pharmacist" title="المبيعات">
         <span class="icon">🛒</span>
         <span class="label">المبيعات</span>
       </button>
-      <button class="nav-btn" data-page="alerts" title="التنبيهات">
+      <button class="nav-btn" data-page="alerts" data-roles="owner" title="التنبيهات">
         <span class="icon">🔔</span>
         <span class="label">التنبيهات</span>
         <span class="badge" id="alertsBadge">0</span>
       </button>
-      <button class="nav-btn" data-page="reports" title="التقارير">
+      <button class="nav-btn" data-page="reports" data-roles="owner accountant" title="التقارير">
         <span class="icon">📈</span>
         <span class="label">التقارير</span>
       </button>
-      <button class="nav-btn" data-page="invoices" title="الفواتير">
+      <button class="nav-btn" data-page="invoices" data-roles="owner accountant pharmacist" title="الفواتير">
         <span class="icon">🧾</span>
         <span class="label">الفواتير</span>
       </button>
-      <button class="nav-btn" data-page="shortages" title="النواقص">
+      <button class="nav-btn" data-page="profitsExpenses" data-roles="owner accountant" title="الأرباح والمصاريف">
+        <span class="icon">💰</span>
+        <span class="label">الأرباح والمصاريف</span>
+      </button>
+      <button class="nav-btn" data-page="returns" data-roles="owner accountant pharmacist" title="المرتجعات">
+        <span class="icon">↩️</span>
+        <span class="label">المرتجعات</span>
+      </button>
+      <button class="nav-btn" data-page="debts" data-roles="owner accountant" title="ديون العملاء">
+        <span class="icon">💳</span>
+        <span class="label">ديون العملاء</span>
+      </button>
+      <button class="nav-btn" data-page="salaries" data-roles="owner accountant" title="رواتب الموظفين">
+        <span class="icon">💵</span>
+        <span class="label">رواتب الموظفين</span>
+      </button>
+      <button class="nav-btn" data-page="exportData" data-roles="accountant" title="تصدير PDF / Excel">
+        <span class="icon">📤</span>
+        <span class="label">تصدير PDF / Excel</span>
+      </button>
+      <button class="nav-btn" data-page="shortages" data-roles="owner pharmacist" title="النواقص">
         <span class="icon">📦</span>
         <span class="label">النواقص</span>
         <span class="badge" id="shortagesBadge" data-empty="true">0</span>
       </button>
-      <button class="nav-btn" data-page="smartSearch" title="بحث ذكي">
+      <button class="nav-btn" data-page="smartSearch" data-roles="pharmacist" title="بحث ذكي">
         <span class="icon">⚡</span>
         <span class="label">بحث ذكي</span>
       </button>
-      <button class="nav-btn" data-page="rxAdvisor" title="الدواء المناسب">
+      <button class="nav-btn" data-page="rxAdvisor" data-roles="pharmacist" title="الدواء المناسب">
         <span class="icon">🩺</span>
         <span class="label">الدواء المناسب</span>
       </button>
-      <button class="nav-btn" data-page="activity" title="سجل النشاط">
+      <button class="nav-btn" data-page="activity" data-roles="accountant" title="سجل العمليات">
         <span class="icon">📋</span>
-        <span class="label">سجل النشاط</span>
+        <span class="label">سجل العمليات</span>
+      </button>
+      <button class="nav-btn" data-page="employees" data-roles="owner" title="إضافة موظف">
+        <span class="icon">👥</span>
+        <span class="label">إضافة موظف</span>
       </button>
     </nav>
     <div class="sidebar-controls">
@@ -9443,7 +10525,744 @@
         </div>
       </div>
     </section>
+
+    <!-- ═════════════════════ صفحة إدارة الموظفين (Owner only) ═════════════════════ -->
+    <section class="page" id="employees">
+      <header class="page-header">
+        <div>
+          <h2>👥 إدارة الموظفين</h2>
+          <p class="subtitle">إضافة الموظفين، تعديل الصلاحيات، وإدارة الأدوار</p>
+        </div>
+        <button class="btn btn-primary" id="openAddEmployeeBtn" type="button">
+          <span>+</span> إضافة موظف
+        </button>
+      </header>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card glass">
+          <div class="stat-icon green">👥</div>
+          <div class="stat-info">
+            <p>إجمالي الموظفين</p>
+            <h3 id="empStatTotal">0</h3>
+            <span class="stat-trend">جميع الأدوار</span>
+          </div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon green">💊</div>
+          <div class="stat-info">
+            <p>صيادلة</p>
+            <h3 id="empStatPharmacists">0</h3>
+            <span class="stat-trend">نشطون</span>
+          </div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon blue">🧮</div>
+          <div class="stat-info">
+            <p>محاسبون</p>
+            <h3 id="empStatAccountants">0</h3>
+            <span class="stat-trend">نشطون</span>
+          </div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon orange">👑</div>
+          <div class="stat-info">
+            <p>مدراء</p>
+            <h3 id="empStatOwners">0</h3>
+            <span class="stat-trend">نشطون</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="glass employees-toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="empSearch" placeholder="ابحث باسم الموظف..." autocomplete="off" />
+        </div>
+        <div class="filter-pills" data-filter-set="emp-role">
+          <button class="pill active" data-emp-role-filter="all" type="button">الكل</button>
+          <button class="pill" data-emp-role-filter="pharmacist" type="button">💊 صيادلة</button>
+          <button class="pill" data-emp-role-filter="accountant" type="button">🧮 محاسبون</button>
+          <button class="pill" data-emp-role-filter="owner" type="button">👑 مدراء</button>
+        </div>
+      </div>
+
+      <!-- Table (desktop) -->
+      <div class="glass panel" style="padding:0;overflow:hidden;">
+        <div class="emp-table-wrapper">
+          <table class="emp-table" id="employeesTable">
+            <thead>
+              <tr>
+                <th>الموظف</th>
+                <th>الدور</th>
+                <th>الحالة</th>
+                <th>تاريخ الإضافة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="employeesBody"></tbody>
+          </table>
+        </div>
+        <!-- Mobile cards (only visible ≤720px via CSS) -->
+        <div class="emp-mobile-list" id="employeesMobileList"></div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════ لوحة المحاسب (Accountant Dashboard) ═════════════════════ -->
+    <section class="page" id="accountantHome">
+      <header class="page-header">
+        <div>
+          <h2>🧮 لوحة المحاسب</h2>
+          <p class="subtitle">نظرة عامة على الحركة المالية اليومية</p>
+        </div>
+        <div class="date-badge glass" id="accTodayDate"></div>
+      </header>
+
+      <div class="stats-grid acc-stats-grid">
+        <div class="stat-card glass">
+          <div class="stat-icon green">💰</div>
+          <div class="stat-info"><p>مبيعات اليوم</p><h3 id="accStatTodaySales">0 د.ع</h3><span class="stat-trend">المدفوعة فقط</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon green">📈</div>
+          <div class="stat-info"><p>أرباح اليوم</p><h3 id="accStatTodayProfit">0 د.ع</h3><span class="stat-trend">المبيعات − المصاريف</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon orange">💸</div>
+          <div class="stat-info"><p>مصاريف اليوم</p><h3 id="accStatTodayExpenses">0 د.ع</h3><span class="stat-trend">جميع المصاريف</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon purple">🧾</div>
+          <div class="stat-info"><p>عدد الفواتير</p><h3 id="accStatInvoices">0</h3><span class="stat-trend">إجمالي</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon orange">💳</div>
+          <div class="stat-info"><p>الديون المستحقة</p><h3 id="accStatDebts">0 د.ع</h3><span class="stat-trend"><span id="accStatDebtsCount">0</span> عميل</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon purple">↩️</div>
+          <div class="stat-info"><p>المرتجعات</p><h3 id="accStatReturns">0</h3><span class="stat-trend">إجمالي السجل</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon blue">💵</div>
+          <div class="stat-info"><p>إجمالي الرواتب</p><h3 id="accStatSalariesTotal">0 د.ع</h3><span class="stat-trend">مدفوع وغير مدفوع</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon orange">⏳</div>
+          <div class="stat-info"><p>الرواتب غير المدفوعة</p><h3 id="accStatSalariesUnpaid">0 د.ع</h3><span class="stat-trend"><span id="accStatSalariesUnpaidCount">0</span> راتب</span></div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="glass panel">
+          <h3>💸 آخر المصاريف</h3>
+          <div class="recent-list" id="accRecentExpenses"><p class="empty-state">لا توجد مصاريف بعد</p></div>
+        </div>
+        <div class="glass panel">
+          <h3>💳 ديون مستحقة قريباً</h3>
+          <div class="recent-list" id="accRecentDebts"><p class="empty-state">لا توجد ديون</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════ الأرباح والمصاريف ═════════════════════ -->
+    <section class="page" id="profitsExpenses">
+      <header class="page-header">
+        <div>
+          <h2>💰 الأرباح والمصاريف</h2>
+          <p class="subtitle">إدارة المصاريف وحساب الأرباح الصافية</p>
+        </div>
+        <button class="btn btn-primary" id="openAddExpenseBtn" type="button"><span>+</span> إضافة مصروف</button>
+      </header>
+
+      <div class="stats-grid">
+        <div class="stat-card glass">
+          <div class="stat-icon green">📥</div>
+          <div class="stat-info"><p>إجمالي الإيرادات</p><h3 id="pxIncome">0 د.ع</h3><span class="stat-trend" id="pxIncomeRange">جميع الفترات</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon orange">📤</div>
+          <div class="stat-info"><p>إجمالي المصاريف</p><h3 id="pxExpenses">0 د.ع</h3><span class="stat-trend"><span id="pxExpensesCount">0</span> عملية</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon green">💎</div>
+          <div class="stat-info"><p>صافي الربح</p><h3 id="pxProfit">0 د.ع</h3><span class="stat-trend" id="pxProfitTrend">إيجابي</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon blue">📊</div>
+          <div class="stat-info"><p>الهامش</p><h3 id="pxMargin">0%</h3><span class="stat-trend">صافي ÷ إيرادات</span></div>
+        </div>
+      </div>
+
+      <div class="glass employees-toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="expenseSearch" placeholder="ابحث في المصاريف..." autocomplete="off" />
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">الفترة</span>
+          <div class="filter-pills" data-filter-set="px-range">
+            <button class="pill active" data-px-range="all" type="button">الكل</button>
+            <button class="pill" data-px-range="today" type="button">اليوم</button>
+            <button class="pill" data-px-range="week" type="button">7 أيام</button>
+            <button class="pill" data-px-range="month" type="button">هذا الشهر</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass panel" style="padding:0;overflow:hidden;">
+        <div class="acc-table-wrapper">
+          <table class="acc-table">
+            <thead><tr>
+              <th>التاريخ</th>
+              <th>الوصف</th>
+              <th>الفئة</th>
+              <th class="num">المبلغ</th>
+              <th>ملاحظات</th>
+              <th>الإجراءات</th>
+            </tr></thead>
+            <tbody id="expensesBody"></tbody>
+          </table>
+        </div>
+        <div class="acc-mobile-list" id="expensesMobileList"></div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════ المرتجعات ═════════════════════ -->
+    <section class="page" id="returns">
+      <header class="page-header">
+        <div>
+          <h2>↩️ المرتجعات</h2>
+          <p class="subtitle">سجل الفواتير المسترجعة والمرتجعات اليدوية</p>
+        </div>
+        <button class="btn btn-primary" id="openAddReturnBtn" type="button"><span>+</span> إضافة مرتجع</button>
+      </header>
+
+      <div class="stats-grid">
+        <div class="stat-card glass">
+          <div class="stat-icon purple">↩️</div>
+          <div class="stat-info"><p>إجمالي المرتجعات</p><h3 id="retStatTotal">0</h3><span class="stat-trend">سجل كامل</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon orange">🧾</div>
+          <div class="stat-info"><p>فواتير مسترجعة</p><h3 id="retStatInvoices">0</h3><span class="stat-trend">من نظام البيع</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon purple">📦</div>
+          <div class="stat-info"><p>مرتجعات يدوية</p><h3 id="retStatManual">0</h3><span class="stat-trend">مدخلة يدوياً</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon orange">💰</div>
+          <div class="stat-info"><p>قيمة المرتجعات</p><h3 id="retStatValue">0 د.ع</h3><span class="stat-trend">إجمالي</span></div>
+        </div>
+      </div>
+
+      <div class="glass employees-toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="returnSearch" placeholder="ابحث برقم الفاتورة أو سبب الإرجاع..." autocomplete="off" />
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">النوع</span>
+          <div class="filter-pills" data-filter-set="ret-type">
+            <button class="pill active" data-ret-type="all" type="button">الكل</button>
+            <button class="pill" data-ret-type="invoice" type="button">فواتير</button>
+            <button class="pill" data-ret-type="manual" type="button">يدوي</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass panel" style="padding:0;overflow:hidden;">
+        <div class="acc-table-wrapper">
+          <table class="acc-table">
+            <thead><tr>
+              <th>التاريخ</th>
+              <th>النوع</th>
+              <th>المرجع</th>
+              <th>السبب</th>
+              <th class="num">القيمة</th>
+              <th>الإجراءات</th>
+            </tr></thead>
+            <tbody id="returnsBody"></tbody>
+          </table>
+        </div>
+        <div class="acc-mobile-list" id="returnsMobileList"></div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════ ديون العملاء ═════════════════════ -->
+    <section class="page" id="debts">
+      <header class="page-header">
+        <div>
+          <h2>💳 ديون العملاء</h2>
+          <p class="subtitle">إدارة ومتابعة ديون العملاء والمستحقات</p>
+        </div>
+        <button class="btn btn-primary" id="openAddDebtBtn" type="button"><span>+</span> إضافة دين</button>
+      </header>
+
+      <div class="stats-grid">
+        <div class="stat-card glass">
+          <div class="stat-icon orange">💳</div>
+          <div class="stat-info"><p>إجمالي الديون</p><h3 id="dbStatTotal">0 د.ع</h3><span class="stat-trend"><span id="dbStatCount">0</span> سجل</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon green">✅</div>
+          <div class="stat-info"><p>المسدد</p><h3 id="dbStatPaid">0 د.ع</h3><span class="stat-trend">من العملاء</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon orange">⏳</div>
+          <div class="stat-info"><p>المتبقي</p><h3 id="dbStatRemaining">0 د.ع</h3><span class="stat-trend">قيد التحصيل</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon purple">⚠️</div>
+          <div class="stat-info"><p>متأخرة</p><h3 id="dbStatOverdue">0</h3><span class="stat-trend">تجاوزت تاريخ الاستحقاق</span></div>
+        </div>
+      </div>
+
+      <div class="glass employees-toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="debtSearch" placeholder="ابحث باسم العميل أو رقم الهاتف..." autocomplete="off" />
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">الحالة</span>
+          <div class="filter-pills" data-filter-set="db-status">
+            <button class="pill active" data-db-status="all" type="button">الكل</button>
+            <button class="pill" data-db-status="unpaid" type="button">غير مسدد</button>
+            <button class="pill" data-db-status="partial" type="button">جزئي</button>
+            <button class="pill" data-db-status="paid" type="button">مسدد</button>
+            <button class="pill" data-db-status="overdue" type="button">متأخر</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass panel" style="padding:0;overflow:hidden;">
+        <div class="acc-table-wrapper">
+          <table class="acc-table">
+            <thead><tr>
+              <th>العميل</th>
+              <th>الهاتف</th>
+              <th class="num">المبلغ</th>
+              <th class="num">المدفوع</th>
+              <th class="num">المتبقي</th>
+              <th>الاستحقاق</th>
+              <th>الحالة</th>
+              <th>الإجراءات</th>
+            </tr></thead>
+            <tbody id="debtsBody"></tbody>
+          </table>
+        </div>
+        <div class="acc-mobile-list" id="debtsMobileList"></div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════ رواتب الموظفين ═════════════════════ -->
+    <section class="page" id="salaries">
+      <header class="page-header">
+        <div>
+          <h2>💵 رواتب الموظفين</h2>
+          <p class="subtitle">إدارة رواتب الموظفين الشهرية</p>
+        </div>
+        <button class="btn btn-primary" id="openAddSalaryBtn" type="button"><span>+</span> إضافة راتب</button>
+      </header>
+
+      <div class="stats-grid">
+        <div class="stat-card glass">
+          <div class="stat-icon blue">💵</div>
+          <div class="stat-info"><p>إجمالي الرواتب</p><h3 id="slStatTotal">0 د.ع</h3><span class="stat-trend"><span id="slStatCount">0</span> سجل</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon green">✅</div>
+          <div class="stat-info"><p>الرواتب المدفوعة</p><h3 id="slStatPaid">0 د.ع</h3><span class="stat-trend"><span id="slStatPaidCount">0</span> راتب</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon orange">⏳</div>
+          <div class="stat-info"><p>غير المدفوعة</p><h3 id="slStatUnpaid">0 د.ع</h3><span class="stat-trend"><span id="slStatUnpaidCount">0</span> راتب</span></div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon purple">👥</div>
+          <div class="stat-info"><p>الموظفون</p><h3 id="slStatEmployees">0</h3><span class="stat-trend">مع رواتب مسجلة</span></div>
+        </div>
+      </div>
+
+      <div class="glass employees-toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="salarySearch" placeholder="ابحث باسم الموظف..." autocomplete="off" />
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">الحالة</span>
+          <div class="filter-pills" data-filter-set="sl-status">
+            <button class="pill active" data-sl-status="all" type="button">الكل</button>
+            <button class="pill" data-sl-status="paid" type="button">مدفوع</button>
+            <button class="pill" data-sl-status="unpaid" type="button">غير مدفوع</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">الشهر</span>
+          <input type="month" id="salaryMonthFilter" class="search-month-input" />
+        </div>
+      </div>
+
+      <div class="glass panel" style="padding:0;overflow:hidden;">
+        <div class="acc-table-wrapper">
+          <table class="acc-table">
+            <thead><tr>
+              <th>الموظف</th>
+              <th>الدور</th>
+              <th class="num">الراتب</th>
+              <th>الشهر</th>
+              <th>تاريخ الدفع</th>
+              <th>الحالة</th>
+              <th>الإجراءات</th>
+            </tr></thead>
+            <tbody id="salariesBody"></tbody>
+          </table>
+        </div>
+        <div class="acc-mobile-list" id="salariesMobileList"></div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════ تصدير PDF / Excel ═════════════════════ -->
+    <section class="page" id="exportData">
+      <header class="page-header">
+        <div>
+          <h2>📤 تصدير البيانات</h2>
+          <p class="subtitle">تصدير التقارير والبيانات بصيغ PDF و Excel</p>
+        </div>
+      </header>
+
+      <div class="export-grid">
+        <div class="glass export-card">
+          <div class="export-icon" style="--exp-color:#10b981;">🧾</div>
+          <h4>الفواتير</h4>
+          <p>تصدير جميع فواتير البيع مع التفاصيل</p>
+          <div class="export-actions">
+            <button class="btn btn-ghost" onclick="exportData('invoices','pdf')">📄 PDF</button>
+            <button class="btn btn-primary" onclick="exportData('invoices','excel')">📊 Excel</button>
+          </div>
+        </div>
+        <div class="glass export-card">
+          <div class="export-icon" style="--exp-color:#3b82f6;">📈</div>
+          <h4>التقارير المالية</h4>
+          <p>تقرير شامل بالمبيعات والمصاريف والأرباح</p>
+          <div class="export-actions">
+            <button class="btn btn-ghost" onclick="exportData('reports','pdf')">📄 PDF</button>
+            <button class="btn btn-primary" onclick="exportData('reports','excel')">📊 Excel</button>
+          </div>
+        </div>
+        <div class="glass export-card">
+          <div class="export-icon" style="--exp-color:#f59e0b;">💸</div>
+          <h4>المصاريف</h4>
+          <p>سجل كامل بالمصاريف اليومية والشهرية</p>
+          <div class="export-actions">
+            <button class="btn btn-ghost" onclick="exportData('expenses','pdf')">📄 PDF</button>
+            <button class="btn btn-primary" onclick="exportData('expenses','excel')">📊 Excel</button>
+          </div>
+        </div>
+        <div class="glass export-card">
+          <div class="export-icon" style="--exp-color:#8b5cf6;">💵</div>
+          <h4>الرواتب</h4>
+          <p>سجل الرواتب الشهرية لجميع الموظفين</p>
+          <div class="export-actions">
+            <button class="btn btn-ghost" onclick="exportData('salaries','pdf')">📄 PDF</button>
+            <button class="btn btn-primary" onclick="exportData('salaries','excel')">📊 Excel</button>
+          </div>
+        </div>
+        <div class="glass export-card">
+          <div class="export-icon" style="--exp-color:#ef4444;">💳</div>
+          <h4>ديون العملاء</h4>
+          <p>تقرير بجميع الديون المستحقة والمسددة</p>
+          <div class="export-actions">
+            <button class="btn btn-ghost" onclick="exportData('debts','pdf')">📄 PDF</button>
+            <button class="btn btn-primary" onclick="exportData('debts','excel')">📊 Excel</button>
+          </div>
+        </div>
+        <div class="glass export-card">
+          <div class="export-icon" style="--exp-color:#06b6d4;">↩️</div>
+          <h4>المرتجعات</h4>
+          <p>سجل بجميع الفواتير والمنتجات المرتجعة</p>
+          <div class="export-actions">
+            <button class="btn btn-ghost" onclick="exportData('returns','pdf')">📄 PDF</button>
+            <button class="btn btn-primary" onclick="exportData('returns','excel')">📊 Excel</button>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <!-- ═════════════════════ نموذج إضافة/تعديل مصروف ═════════════════════ -->
+  <div class="modal-overlay" id="expenseModal">
+    <div class="modal modal-lg glass">
+      <header class="modal-header">
+        <h3 id="expenseModalTitle">➕ إضافة مصروف</h3>
+        <button class="close-btn" id="closeExpenseModal" type="button">×</button>
+      </header>
+      <form id="expenseForm" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label>الوصف *</label>
+            <input type="text" id="expDescInput" placeholder="مثال: إيجار، فاتورة كهرباء..." required />
+            <div class="error-msg">يجب إدخال الوصف</div>
+          </div>
+          <div class="form-group">
+            <label>الفئة</label>
+            <select id="expCategoryInput">
+              <option value="rent">إيجار</option>
+              <option value="utilities">فواتير خدمات</option>
+              <option value="supplies">مستلزمات</option>
+              <option value="maintenance">صيانة</option>
+              <option value="marketing">تسويق</option>
+              <option value="other" selected>أخرى</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>المبلغ (د.ع) *</label>
+            <input type="number" id="expAmountInput" min="0" step="500" placeholder="0" required />
+            <div class="error-msg">يجب إدخال مبلغ صحيح</div>
+          </div>
+          <div class="form-group">
+            <label>التاريخ *</label>
+            <input type="date" id="expDateInput" required />
+            <div class="error-msg">يجب إدخال التاريخ</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>ملاحظات</label>
+          <textarea id="expNotesInput" rows="2" placeholder="ملاحظات إضافية..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelExpenseBtn">إلغاء</button>
+          <button type="submit" class="btn btn-primary">💾 حفظ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═════════════════════ نموذج إضافة دين ═════════════════════ -->
+  <div class="modal-overlay" id="debtModal">
+    <div class="modal modal-lg glass">
+      <header class="modal-header">
+        <h3 id="debtModalTitle">➕ إضافة دين عميل</h3>
+        <button class="close-btn" id="closeDebtModal" type="button">×</button>
+      </header>
+      <form id="debtForm" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label>اسم العميل *</label>
+            <input type="text" id="dbCustomerInput" placeholder="مثال: أحمد محمد" required />
+            <div class="error-msg">يجب إدخال اسم العميل</div>
+          </div>
+          <div class="form-group">
+            <label>رقم الهاتف</label>
+            <input type="tel" id="dbPhoneInput" placeholder="07XXXXXXXXX" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>إجمالي الدين (د.ع) *</label>
+            <input type="number" id="dbTotalInput" min="0" step="500" placeholder="0" required />
+            <div class="error-msg">يجب إدخال مبلغ صحيح</div>
+          </div>
+          <div class="form-group">
+            <label>المبلغ المدفوع</label>
+            <input type="number" id="dbPaidInput" min="0" step="500" value="0" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>تاريخ الاستحقاق</label>
+            <input type="date" id="dbDueInput" />
+          </div>
+          <div class="form-group">
+            <label>الحالة</label>
+            <select id="dbStatusInput">
+              <option value="unpaid">غير مسدد</option>
+              <option value="partial">جزئي</option>
+              <option value="paid">مسدد كاملاً</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>ملاحظات</label>
+          <textarea id="dbNotesInput" rows="2"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelDebtBtn">إلغاء</button>
+          <button type="submit" class="btn btn-primary">💾 حفظ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═════════════════════ نموذج إضافة راتب ═════════════════════ -->
+  <div class="modal-overlay" id="salaryModal">
+    <div class="modal modal-lg glass">
+      <header class="modal-header">
+        <h3 id="salaryModalTitle">➕ إضافة راتب موظف</h3>
+        <button class="close-btn" id="closeSalaryModal" type="button">×</button>
+      </header>
+      <form id="salaryForm" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label>الموظف *</label>
+            <select id="slEmployeeInput" required>
+              <option value="">-- اختر الموظف --</option>
+            </select>
+            <div class="error-msg">يجب اختيار موظف</div>
+          </div>
+          <div class="form-group">
+            <label>الراتب (د.ع) *</label>
+            <input type="number" id="slAmountInput" min="0" step="1000" required />
+            <div class="error-msg">يجب إدخال راتب صحيح</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>الشهر *</label>
+            <input type="month" id="slMonthInput" required />
+            <div class="error-msg">يجب اختيار الشهر</div>
+          </div>
+          <div class="form-group">
+            <label>الحالة</label>
+            <select id="slStatusInput">
+              <option value="unpaid">غير مدفوع</option>
+              <option value="paid">مدفوع</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>تاريخ الدفع <span class="label-hint">إن كان مدفوعاً</span></label>
+          <input type="date" id="slPaymentDateInput" />
+        </div>
+        <div class="form-group">
+          <label>ملاحظات</label>
+          <textarea id="slNotesInput" rows="2" placeholder="بدلات، خصومات..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelSalaryBtn">إلغاء</button>
+          <button type="submit" class="btn btn-primary">💾 حفظ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═════════════════════ نموذج إضافة مرتجع يدوي ═════════════════════ -->
+  <div class="modal-overlay" id="returnModal">
+    <div class="modal modal-lg glass">
+      <header class="modal-header">
+        <h3 id="returnModalTitle">➕ إضافة مرتجع</h3>
+        <button class="close-btn" id="closeReturnModal" type="button">×</button>
+      </header>
+      <form id="returnForm" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label>نوع المرتجع</label>
+            <select id="retTypeInput">
+              <option value="product">منتج</option>
+              <option value="supplier">مرتجع مورد</option>
+              <option value="other">أخرى</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>المرجع *</label>
+            <input type="text" id="retRefInput" placeholder="اسم المنتج / رقم الفاتورة..." required />
+            <div class="error-msg">يجب إدخال المرجع</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>القيمة (د.ع) *</label>
+            <input type="number" id="retAmountInput" min="0" step="500" required />
+            <div class="error-msg">يجب إدخال قيمة صحيحة</div>
+          </div>
+          <div class="form-group">
+            <label>التاريخ *</label>
+            <input type="date" id="retDateInput" required />
+            <div class="error-msg">يجب إدخال التاريخ</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>سبب الإرجاع *</label>
+          <textarea id="retReasonInput" rows="2" required></textarea>
+          <div class="error-msg">يجب إدخال السبب</div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelReturnBtn">إلغاء</button>
+          <button type="submit" class="btn btn-primary">💾 حفظ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═════════════════════ نموذج إضافة / تعديل موظف ═════════════════════ -->
+  <div class="modal-overlay" id="employeeModal">
+    <div class="modal modal-lg glass">
+      <header class="modal-header">
+        <h3 id="employeeModalTitle">➕ إضافة موظف جديد</h3>
+        <button class="close-btn" id="closeEmployeeModal" type="button">×</button>
+      </header>
+      <form id="employeeForm" novalidate>
+        <div class="form-section">
+          <div class="form-section-header">
+            <span class="section-icon">👤</span>
+            معلومات الموظف
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>الاسم الكامل *</label>
+              <input type="text" id="empNameInput" placeholder="مثال: حيدر أحمد" autocomplete="off" required />
+              <div class="error-msg">يجب إدخال الاسم</div>
+            </div>
+            <div class="form-group">
+              <label>الدور *</label>
+              <select id="empRoleInput" required>
+                <option value="pharmacist">💊 صيدلاني</option>
+                <option value="accountant">🧮 محاسب</option>
+                <option value="owner">👑 أونر / مدير</option>
+              </select>
+              <div class="error-msg">يجب اختيار الدور</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>الحالة</label>
+            <select id="empStatusInput">
+              <option value="active">✅ نشط</option>
+              <option value="suspended">⏸️ موقوف</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-header">
+            <span class="section-icon">🔐</span>
+            رمز الدخول (PIN)
+          </div>
+          <p class="panel-desc" id="empPinHint" style="margin:-4px 0 12px;">يجب أن يكون الرمز مكوّناً من 4 أرقام بالضبط.</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>رمز الدخول (4 أرقام) *</label>
+              <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="empPinInput" placeholder="••••" autocomplete="new-password" />
+              <div class="error-msg">يجب إدخال 4 أرقام</div>
+            </div>
+            <div class="form-group">
+              <label>تأكيد الرمز *</label>
+              <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="empPinConfirm" placeholder="••••" autocomplete="new-password" />
+              <div class="error-msg">الرمز غير مطابق</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelEmployeeBtn">إلغاء</button>
+          <button type="submit" class="btn btn-primary">💾 حفظ</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- ═════════════════════ MOBILE LAYOUT (visible only ≤768px) ═════════════════════
        يستخدم نفس بيانات Desktop (medications/invoices/cart) ونفس API/Cloudflare D1.
@@ -9555,21 +11374,54 @@
     </main>
 
     <nav class="m-bottom-nav">
-      <button class="m-nav-btn active" data-mpage="dashboard">
+      <button class="m-nav-btn active" data-mpage="dashboard" data-roles="owner">
         <span class="m-nav-ico">🏠</span><span class="m-nav-label">الرئيسية</span>
       </button>
-      <button class="m-nav-btn" data-mpage="medications">
+      <button class="m-nav-btn" data-mpage="accountantHome" data-roles="accountant">
+        <span class="m-nav-ico">🧮</span><span class="m-nav-label">المحاسب</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="medications" data-roles="owner pharmacist">
         <span class="m-nav-ico">💊</span><span class="m-nav-label">أدوية</span>
       </button>
-      <button class="m-nav-btn m-nav-primary" data-mpage="sales">
+      <button class="m-nav-btn m-nav-primary" data-mpage="sales" data-roles="owner pharmacist">
         <span class="m-nav-ico">🛒</span><span class="m-nav-label">بيع</span>
       </button>
-      <button class="m-nav-btn" data-mpage="alerts">
+      <button class="m-nav-btn" data-mpage="alerts" data-roles="owner">
         <span class="m-nav-ico">🔔</span><span class="m-nav-label">تنبيهات</span>
         <span class="m-nav-badge" id="mNavAlertsBadge" data-empty="true">0</span>
       </button>
-      <button class="m-nav-btn" data-mpage="invoices">
+      <button class="m-nav-btn" data-mpage="invoices" data-roles="owner accountant pharmacist">
         <span class="m-nav-ico">🧾</span><span class="m-nav-label">فواتير</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="profitsExpenses" data-roles="owner accountant">
+        <span class="m-nav-ico">💰</span><span class="m-nav-label">أرباح</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="returns" data-roles="owner accountant pharmacist">
+        <span class="m-nav-ico">↩️</span><span class="m-nav-label">مرتجعات</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="debts" data-roles="owner accountant">
+        <span class="m-nav-ico">💳</span><span class="m-nav-label">ديون</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="salaries" data-roles="owner accountant">
+        <span class="m-nav-ico">💵</span><span class="m-nav-label">رواتب</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="exportData" data-roles="accountant">
+        <span class="m-nav-ico">📤</span><span class="m-nav-label">تصدير</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="shortages" data-roles="owner pharmacist">
+        <span class="m-nav-ico">📦</span><span class="m-nav-label">نواقص</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="smartSearch" data-roles="pharmacist">
+        <span class="m-nav-ico">⚡</span><span class="m-nav-label">بحث</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="rxAdvisor" data-roles="pharmacist">
+        <span class="m-nav-ico">🩺</span><span class="m-nav-label">دواء</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="reports" data-roles="owner">
+        <span class="m-nav-ico">📈</span><span class="m-nav-label">تقارير</span>
+      </button>
+      <button class="m-nav-btn" data-mpage="employees" data-roles="owner">
+        <span class="m-nav-ico">👥</span><span class="m-nav-label">موظفين</span>
       </button>
     </nav>
   </div>
@@ -9941,19 +11793,46 @@
   <div class="gooey-nav-container" id="gooeyNav">
     <nav>
       <ul>
-        <li><a href="#" data-page="dashboard">لوحة التحكم</a></li>
-        <li><a href="#" data-page="medications">الأدوية</a></li>
-        <li><a href="#" data-page="sales">المبيعات</a></li>
-        <li><a href="#" data-page="alerts">التنبيهات</a></li>
-        <li><a href="#" data-page="invoices">الفواتير</a></li>
-        <li><a href="#" data-page="shortages">النواقص</a></li>
-        <li><a href="#" data-page="smartSearch">بحث ذكي</a></li>
-        <li><a href="#" data-page="rxAdvisor">الدواء المناسب</a></li>
-        <li><a href="#" data-page="reports">التقارير</a></li>
+        <li data-roles="owner"><a href="#" data-page="dashboard">لوحة التحكم</a></li>
+        <li data-roles="accountant"><a href="#" data-page="accountantHome">لوحة المحاسب</a></li>
+        <li data-roles="owner pharmacist"><a href="#" data-page="medications">الأدوية</a></li>
+        <li data-roles="owner pharmacist"><a href="#" data-page="sales">المبيعات</a></li>
+        <li data-roles="owner"><a href="#" data-page="alerts">التنبيهات</a></li>
+        <li data-roles="owner accountant pharmacist"><a href="#" data-page="invoices">الفواتير</a></li>
+        <li data-roles="owner accountant"><a href="#" data-page="reports">التقارير</a></li>
+        <li data-roles="owner accountant"><a href="#" data-page="profitsExpenses">الأرباح والمصاريف</a></li>
+        <li data-roles="owner accountant pharmacist"><a href="#" data-page="returns">المرتجعات</a></li>
+        <li data-roles="owner accountant"><a href="#" data-page="debts">ديون العملاء</a></li>
+        <li data-roles="owner accountant"><a href="#" data-page="salaries">الرواتب</a></li>
+        <li data-roles="accountant"><a href="#" data-page="exportData">تصدير</a></li>
+        <li data-roles="accountant"><a href="#" data-page="activity">سجل العمليات</a></li>
+        <li data-roles="owner pharmacist"><a href="#" data-page="shortages">النواقص</a></li>
+        <li data-roles="pharmacist"><a href="#" data-page="smartSearch">بحث ذكي</a></li>
+        <li data-roles="pharmacist"><a href="#" data-page="rxAdvisor">الدواء المناسب</a></li>
+        <li data-roles="owner"><a href="#" data-page="employees">إضافة موظف</a></li>
       </ul>
     </nav>
     <span class="effect filter"></span>
     <span class="effect text"></span>
+  </div>
+
+  <!-- ─── Floating user pill (logged-in user) + dropdown menu ─── -->
+  <button class="user-pill" id="userPill" type="button" aria-haspopup="true" aria-expanded="false" aria-label="حساب المستخدم">
+    <span class="up-avatar" id="userPillAvatar">—</span>
+    <span class="up-text">
+      <span class="up-name" id="userPillName">—</span>
+      <span class="up-role" id="userPillRole">—</span>
+    </span>
+  </button>
+  <div class="user-menu" id="userMenu" role="menu" aria-hidden="true">
+    <div class="user-menu-info">
+      <strong id="userMenuName">—</strong>
+      <span id="userMenuRole">—</span>
+    </div>
+    <button class="user-menu-item danger" id="logoutBtn" type="button" role="menuitem">
+      <span>🚪</span>
+      <span>تسجيل الخروج</span>
+    </button>
   </div>
 
   <!-- Theme Switcher (popover with 3 themes: light / medical / dark) -->
@@ -10320,6 +12199,12 @@
         }
         if (pageId === 'rxAdvisor') renderRxAdvisor();
         if (pageId === 'activity') renderActivityPage();
+        if (pageId === 'employees' && typeof window.renderEmployeesPage === 'function') window.renderEmployeesPage();
+        if (pageId === 'accountantHome' && typeof window.renderAccountantHome === 'function') window.renderAccountantHome();
+        if (pageId === 'profitsExpenses' && typeof window.renderProfitsExpenses === 'function') window.renderProfitsExpenses();
+        if (pageId === 'returns' && typeof window.renderReturnsPage === 'function') window.renderReturnsPage();
+        if (pageId === 'debts' && typeof window.renderDebtsPage === 'function') window.renderDebtsPage();
+        if (pageId === 'salaries' && typeof window.renderSalariesPage === 'function') window.renderSalariesPage();
       });
     });
 
@@ -14418,6 +16303,1521 @@
     });
     document.querySelectorAll('.nav-btn').forEach(b => {
       navObserver.observe(b, { attributes: true, attributeFilter: ['class'] });
+    });
+  })();
+  </script>
+
+  <!-- ═════════════════════ ROLE-BASED PERMISSIONS + EMPLOYEES CRUD ═════════════════════ -->
+  <script>
+  (function () {
+    const ROLE_DEFAULT_PAGE = {
+      owner:      'dashboard',
+      pharmacist: 'medications',
+      accountant: 'accountantHome',
+    };
+    const ROLE_META = (window.PharmacyAuth && window.PharmacyAuth.ROLE_META) || {
+      pharmacist: { label: 'صيدلاني', icon: '💊', cls: 'pharmacist' },
+      accountant: { label: 'محاسب',   icon: '🧮', cls: 'accountant' },
+      owner:      { label: 'المدير',  icon: '👑', cls: 'owner' },
+    };
+
+    function currentUser() {
+      try { return JSON.parse(sessionStorage.getItem('pharmacy_current_user') || 'null'); }
+      catch (_) { return null; }
+    }
+
+    // ─── Filter elements by role using their data-roles attribute ───
+    function roleMatches(rolesAttr, role) {
+      if (!rolesAttr) return true; // unrestricted
+      const list = rolesAttr.split(/\s+/).filter(Boolean);
+      return list.includes(role);
+    }
+    function applyRolePermissions(role) {
+      if (!role) return;
+      // Sidebar nav-btns
+      document.querySelectorAll('.nav-btn[data-roles]').forEach(btn => {
+        btn.style.display = roleMatches(btn.dataset.roles, role) ? '' : 'none';
+      });
+      // GooeyNav top items
+      document.querySelectorAll('.gooey-nav-container nav ul li[data-roles]').forEach(li => {
+        li.style.display = roleMatches(li.dataset.roles, role) ? '' : 'none';
+      });
+      // Mobile bottom nav buttons (dead code but harmless)
+      document.querySelectorAll('.m-bottom-nav .m-nav-btn[data-roles]').forEach(btn => {
+        btn.style.display = roleMatches(btn.dataset.roles, role) ? '' : 'none';
+      });
+      // Admin-only elements
+      document.querySelectorAll('[data-admin-only]').forEach(el => {
+        el.style.display = role === 'owner' ? '' : 'none';
+      });
+      // Mark body
+      document.body.dataset.activeRole = role;
+    }
+
+    // ─── Page navigation guard: prevent role from opening forbidden pages ───
+    function isPageAllowedForRole(pageId, role) {
+      const btn = document.querySelector(`.nav-btn[data-page="${pageId}"]`);
+      if (!btn) return true; // pages without an entry (e.g., hidden) — allow
+      return roleMatches(btn.dataset.roles, role);
+    }
+
+    function navigateTo(pageId) {
+      const btn = document.querySelector(`.nav-btn[data-page="${pageId}"]`);
+      if (btn) btn.click();
+    }
+
+    function navigateToDefault(role) {
+      const target = ROLE_DEFAULT_PAGE[role] || 'dashboard';
+      // Activate the page section directly + sync nav-btn classes
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      const target_section = document.getElementById(target);
+      const target_btn = document.querySelector(`.nav-btn[data-page="${target}"]`);
+      if (target_section) target_section.classList.add('active');
+      if (target_btn) target_btn.classList.add('active');
+      // Fire renderers via the existing nav-btn click path on next paint
+      // — but we already toggled active. Manually invoke matching render if global exists.
+      const renderMap = {
+        dashboard:      'renderDashboard',
+        medications:    'renderMedications',
+        sales:          'renderSalesPage',
+        alerts:         'renderAlerts',
+        reports:        'renderReports',
+        invoices:       'renderInvoices',
+        shortages:      'renderShortages',
+        smartSearch:    'renderSmartSearch',
+        rxAdvisor:      'renderRxAdvisor',
+        activity:       'renderActivityPage',
+        employees:      'renderEmployeesPage',
+      };
+      const fnName = renderMap[target];
+      try { if (fnName && typeof window[fnName] === 'function') window[fnName](); }
+      catch (_) {}
+    }
+
+    // ─── Intercept nav-btn clicks to enforce permissions ───
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.nav-btn[data-page]');
+      if (!btn) return;
+      const u = currentUser();
+      if (!u) return;
+      if (!roleMatches(btn.dataset.roles, u.role)) {
+        e.stopPropagation();
+        e.preventDefault();
+        if (typeof toast === 'function') toast({ title: 'غير مصرح', message: 'لا تملك صلاحية لفتح هذا القسم', type: 'error' });
+      }
+    }, true);
+
+    // Also intercept GooeyNav anchors
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('.gooey-nav-container nav ul li a[data-page]');
+      if (!a) return;
+      const u = currentUser();
+      if (!u) return;
+      const li = a.closest('li');
+      if (li && !roleMatches(li.dataset.roles, u.role)) {
+        e.stopPropagation();
+        e.preventDefault();
+        if (typeof toast === 'function') toast({ title: 'غير مصرح', message: 'لا تملك صلاحية لفتح هذا القسم', type: 'error' });
+      }
+    }, true);
+
+    // ─── User pill + dropdown menu ───
+    const userPill   = document.getElementById('userPill');
+    const userMenu   = document.getElementById('userMenu');
+    const logoutBtn  = document.getElementById('logoutBtn');
+    function showUserPill(user) {
+      if (!userPill) return;
+      const meta = ROLE_META[user.role] || ROLE_META.owner;
+      userPill.dataset.role = user.role;
+      document.getElementById('userPillAvatar').textContent = (window.PharmacyAuth && window.PharmacyAuth.getInitial) ? window.PharmacyAuth.getInitial(user.name) : (user.name || '؟').charAt(0);
+      document.getElementById('userPillName').textContent = user.name;
+      document.getElementById('userPillRole').textContent = `${meta.icon} ${meta.label}`;
+      document.getElementById('userMenuName').textContent = user.name;
+      document.getElementById('userMenuRole').textContent = `${meta.icon} ${meta.label}`;
+      userPill.classList.add('visible');
+    }
+    function toggleUserMenu(open) {
+      if (!userMenu || !userPill) return;
+      const willOpen = open ?? !userMenu.classList.contains('open');
+      userMenu.classList.toggle('open', willOpen);
+      userPill.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      userMenu.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
+    }
+    if (userPill) userPill.addEventListener('click', (e) => { e.stopPropagation(); toggleUserMenu(); });
+    if (logoutBtn) logoutBtn.addEventListener('click', () => {
+      if (typeof toast === 'function') toast({ title: 'تم الخروج', message: 'تم تسجيل خروجك بنجاح', type: 'info' });
+      setTimeout(() => { if (window.PharmacyAuth) window.PharmacyAuth.logout(); else location.reload(); }, 400);
+    });
+    document.addEventListener('click', (e) => {
+      if (!userMenu) return;
+      if (userPill && userPill.contains(e.target)) return;
+      if (userMenu.contains(e.target)) return;
+      toggleUserMenu(false);
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleUserMenu(false); });
+
+    // ─── EMPLOYEES MANAGEMENT (Owner-only CRUD) ───
+    const EMP_ROLE_LABELS = { pharmacist:'صيدلاني', accountant:'محاسب', owner:'مدير / أونر' };
+    const EMP_ROLE_ICONS  = { pharmacist:'💊', accountant:'🧮', owner:'👑' };
+
+    let empSearchTerm = '';
+    let empRoleFilter = 'all';
+    let editingEmpId = null;
+
+    function getEmployees() { return (window.PharmacyAuth && window.PharmacyAuth.loadEmployees) ? window.PharmacyAuth.loadEmployees() : []; }
+    function saveEmployees(list) { if (window.PharmacyAuth && window.PharmacyAuth.saveEmployees) window.PharmacyAuth.saveEmployees(list); }
+
+    function formatEmpDate(iso) {
+      if (!iso) return '—';
+      try {
+        return new Date(iso).toLocaleDateString('ar-EG', { day:'numeric', month:'long', year:'numeric', numberingSystem:'latn' });
+      } catch (_) { return '—'; }
+    }
+    function getInitial(name) {
+      if (window.PharmacyAuth && window.PharmacyAuth.getInitial) return window.PharmacyAuth.getInitial(name);
+      return (name || '؟').toString().trim().charAt(0) || '؟';
+    }
+
+    function filteredEmployees() {
+      const term = (empSearchTerm || '').toLowerCase().trim();
+      return getEmployees().filter(e => {
+        if (empRoleFilter !== 'all' && e.role !== empRoleFilter) return false;
+        if (term && !(e.name || '').toLowerCase().includes(term)) return false;
+        return true;
+      });
+    }
+
+    window.renderEmployeesPage = function () {
+      // Stats (counts active per role)
+      const all = getEmployees();
+      const active = all.filter(e => e.status === 'active');
+      const $ = id => document.getElementById(id);
+      if ($('empStatTotal'))       $('empStatTotal').textContent       = all.length;
+      if ($('empStatPharmacists')) $('empStatPharmacists').textContent = active.filter(e => e.role === 'pharmacist').length;
+      if ($('empStatAccountants')) $('empStatAccountants').textContent = active.filter(e => e.role === 'accountant').length;
+      if ($('empStatOwners'))      $('empStatOwners').textContent      = active.filter(e => e.role === 'owner').length;
+
+      const list = filteredEmployees();
+      const body = $('employeesBody');
+      const mob  = $('employeesMobileList');
+      if (!body || !mob) return;
+
+      if (list.length === 0) {
+        const hasAny = all.length > 0;
+        const emptyHTML = `
+          <div class="employees-empty-state">
+            <div class="ee-icon">${hasAny ? '🔍' : '👥'}</div>
+            <h3>${hasAny ? 'لا توجد نتائج' : 'لا يوجد موظفون بعد'}</h3>
+            <p>${hasAny ? 'جرّب تغيير البحث أو الفلتر.' : 'اضغط "إضافة موظف" لإضافة أول موظف للنظام.'}</p>
+          </div>`;
+        body.innerHTML = `<tr><td colspan="5">${emptyHTML}</td></tr>`;
+        mob.innerHTML  = emptyHTML;
+        return;
+      }
+
+      // Table rows (desktop)
+      body.innerHTML = list.map(e => {
+        const meta = ROLE_META[e.role] || {};
+        const isActive = e.status === 'active';
+        return `
+          <tr data-emp-id="${e.id}">
+            <td>
+              <div class="emp-name-cell" data-role="${e.role}">
+                <div class="emp-avatar-sm">${getInitial(e.name)}</div>
+                <div>
+                  <strong>${e.name}</strong>
+                  <small>ID: ${e.id.slice(-6)}</small>
+                </div>
+              </div>
+            </td>
+            <td><span class="role-tag ${e.role}">${EMP_ROLE_ICONS[e.role] || ''} ${EMP_ROLE_LABELS[e.role] || e.role}</span></td>
+            <td><span class="emp-status-tag ${e.status}"><span class="dot"></span>${isActive ? 'نشط' : 'موقوف'}</span></td>
+            <td>${formatEmpDate(e.createdAt)}</td>
+            <td>
+              <div class="emp-actions">
+                <button class="emp-action-btn" onclick="empEdit('${e.id}')" title="تعديل">✏️ تعديل</button>
+                <button class="emp-action-btn" onclick="empResetPin('${e.id}')" title="إعادة تعيين الرمز">🔑 رمز</button>
+                <button class="emp-action-btn ${isActive ? 'warn' : 'success'}" onclick="empToggleStatus('${e.id}')" title="${isActive ? 'إيقاف' : 'تنشيط'}">
+                  ${isActive ? '⏸️ إيقاف' : '▶️ تنشيط'}
+                </button>
+                <button class="emp-action-btn danger" onclick="empDelete('${e.id}')" title="حذف">🗑️ حذف</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Mobile cards
+      mob.innerHTML = list.map(e => {
+        const isActive = e.status === 'active';
+        return `
+          <div class="emp-mobile-card" data-emp-id="${e.id}">
+            <div class="emp-mobile-card-top">
+              <div class="emp-avatar-sm" style="--role-color:${e.role === 'owner' ? '#d97706' : e.role === 'accountant' ? '#3b82f6' : '#10b981'}; --role-color-light:${e.role === 'owner' ? '#fbbf24' : e.role === 'accountant' ? '#60a5fa' : '#34d399'};">${getInitial(e.name)}</div>
+              <div>
+                <strong>${e.name}</strong>
+                <small>${formatEmpDate(e.createdAt)}</small>
+              </div>
+            </div>
+            <div class="emp-mobile-card-meta">
+              <span class="role-tag ${e.role}">${EMP_ROLE_ICONS[e.role] || ''} ${EMP_ROLE_LABELS[e.role] || e.role}</span>
+              <span class="emp-status-tag ${e.status}"><span class="dot"></span>${isActive ? 'نشط' : 'موقوف'}</span>
+            </div>
+            <div class="emp-mobile-card-actions">
+              <button class="emp-action-btn" onclick="empEdit('${e.id}')">✏️ تعديل</button>
+              <button class="emp-action-btn" onclick="empResetPin('${e.id}')">🔑 رمز</button>
+              <button class="emp-action-btn ${isActive ? 'warn' : 'success'}" onclick="empToggleStatus('${e.id}')">${isActive ? '⏸️' : '▶️'}</button>
+              <button class="emp-action-btn danger" onclick="empDelete('${e.id}')">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    // ─── Modal: open / close ───
+    const modal       = document.getElementById('employeeModal');
+    const modalTitle  = document.getElementById('employeeModalTitle');
+    const nameInput   = document.getElementById('empNameInput');
+    const roleInput   = document.getElementById('empRoleInput');
+    const statusInput = document.getElementById('empStatusInput');
+    const pinInput    = document.getElementById('empPinInput');
+    const pinConfirm  = document.getElementById('empPinConfirm');
+    const pinHint     = document.getElementById('empPinHint');
+
+    function clearFormErrors() {
+      modal.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+    }
+    function openEmployeeModal(emp) {
+      editingEmpId = emp ? emp.id : null;
+      modalTitle.textContent = emp ? '✏️ تعديل موظف' : '➕ إضافة موظف جديد';
+      nameInput.value   = emp ? emp.name : '';
+      roleInput.value   = emp ? emp.role : 'pharmacist';
+      statusInput.value = emp ? emp.status : 'active';
+      pinInput.value = '';
+      pinConfirm.value = '';
+      pinHint.textContent = emp
+        ? 'اتركهما فارغين للإبقاء على الرمز الحالي، أو أدخل 4 أرقام جديدة.'
+        : 'يجب أن يكون الرمز مكوّناً من 4 أرقام بالضبط.';
+      clearFormErrors();
+      modal.classList.add('active');
+      setTimeout(() => nameInput.focus(), 200);
+    }
+    function closeEmployeeModal() {
+      modal.classList.remove('active');
+      editingEmpId = null;
+    }
+    document.getElementById('openAddEmployeeBtn')?.addEventListener('click', () => openEmployeeModal(null));
+    document.getElementById('closeEmployeeModal')?.addEventListener('click', closeEmployeeModal);
+    document.getElementById('cancelEmployeeBtn')?.addEventListener('click', closeEmployeeModal);
+
+    // Form submit
+    document.getElementById('employeeForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      clearFormErrors();
+      const name = (nameInput.value || '').trim();
+      const role = roleInput.value;
+      const status = statusInput.value;
+      const pin = (pinInput.value || '').trim();
+      const pinC = (pinConfirm.value || '').trim();
+
+      let valid = true;
+      function err(id, msg) {
+        const g = document.getElementById(id).closest('.form-group');
+        g.classList.add('has-error');
+        const e = g.querySelector('.error-msg');
+        if (e && msg) e.textContent = msg;
+        valid = false;
+      }
+
+      if (!name) err('empNameInput', 'يجب إدخال اسم الموظف');
+      if (!['pharmacist','accountant','owner'].includes(role)) err('empRoleInput', 'دور غير صالح');
+
+      const list = getEmployees();
+      const existing = editingEmpId ? list.find(x => x.id === editingEmpId) : null;
+      const requirePin = !existing || pin || pinC;
+      if (requirePin) {
+        if (!/^\d{4}$/.test(pin)) err('empPinInput', 'يجب إدخال 4 أرقام بالضبط');
+        if (pin !== pinC) err('empPinConfirm', 'الرمز غير مطابق');
+        // Unique PIN within same role (avoid login ambiguity)
+        const collision = list.find(x => x.pin === pin && x.role === role && x.id !== editingEmpId);
+        if (collision) err('empPinInput', 'هذا الرمز مستخدم بالفعل لموظف آخر بنفس الدور');
+      }
+
+      if (!valid) {
+        if (typeof toast === 'function') toast({ title:'خطأ في النموذج', message:'يرجى تصحيح الحقول المميزة بالأحمر', type:'error' });
+        return;
+      }
+
+      if (existing) {
+        // Edit
+        existing.name = name;
+        existing.role = role;
+        existing.status = status;
+        if (pin) existing.pin = pin;
+        existing.updatedAt = new Date().toISOString();
+        saveEmployees(list);
+        if (typeof toast === 'function') toast({ title:'تم التحديث', message:`تم تعديل بيانات "${name}"`, type:'success' });
+      } else {
+        // Create
+        const newEmp = {
+          id: (window.PharmacyAuth && window.PharmacyAuth.newId) ? window.PharmacyAuth.newId() : 'emp_' + Date.now(),
+          name, role, status, pin,
+          createdAt: new Date().toISOString(),
+        };
+        list.push(newEmp);
+        saveEmployees(list);
+        if (typeof toast === 'function') toast({ title:'تمت الإضافة', message:`تم إضافة "${name}" بنجاح`, type:'success' });
+      }
+      closeEmployeeModal();
+      window.renderEmployeesPage();
+    });
+
+    // Search + filter
+    document.getElementById('empSearch')?.addEventListener('input', (e) => {
+      empSearchTerm = e.target.value;
+      window.renderEmployeesPage();
+    });
+    document.querySelectorAll('[data-filter-set="emp-role"] .pill').forEach(p => {
+      p.addEventListener('click', () => {
+        document.querySelectorAll('[data-filter-set="emp-role"] .pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+        empRoleFilter = p.dataset.empRoleFilter;
+        window.renderEmployeesPage();
+      });
+    });
+
+    // ─── Action handlers (global so onclick can reach them) ───
+    window.empEdit = (id) => {
+      const emp = getEmployees().find(x => x.id === id);
+      if (emp) openEmployeeModal(emp);
+    };
+
+    window.empDelete = (id) => {
+      const list = getEmployees();
+      const emp = list.find(x => x.id === id);
+      if (!emp) return;
+      // Safety: never delete the last active owner.
+      const activeOwners = list.filter(e => e.role === 'owner' && e.status === 'active');
+      if (emp.role === 'owner' && activeOwners.length <= 1 && emp.status === 'active') {
+        if (typeof toast === 'function') toast({ title:'لا يمكن الحذف', message:'لا يمكن حذف آخر مدير نشط في النظام', type:'error' });
+        return;
+      }
+      // Safety: can't delete yourself
+      const me = currentUser();
+      if (me && me.id === id) {
+        if (typeof toast === 'function') toast({ title:'لا يمكن الحذف', message:'لا يمكنك حذف حسابك الحالي', type:'error' });
+        return;
+      }
+      // Use existing confirm modal if available, otherwise fallback
+      if (typeof window.showConfirmModal === 'function') {
+        window.showConfirmModal({
+          title: 'حذف موظف',
+          message: `هل تريد بالتأكيد حذف "${emp.name}"؟ لا يمكن التراجع عن هذا الإجراء.`,
+          confirmText: 'حذف',
+          onConfirm: () => {
+            const next = getEmployees().filter(x => x.id !== id);
+            saveEmployees(next);
+            window.renderEmployeesPage();
+            if (typeof toast === 'function') toast({ title:'تم الحذف', message:`تم حذف "${emp.name}"`, type:'warning' });
+          }
+        });
+      } else {
+        if (confirm(`حذف "${emp.name}"؟`)) {
+          const next = getEmployees().filter(x => x.id !== id);
+          saveEmployees(next);
+          window.renderEmployeesPage();
+        }
+      }
+    };
+
+    window.empToggleStatus = (id) => {
+      const list = getEmployees();
+      const emp = list.find(x => x.id === id);
+      if (!emp) return;
+      // Safety: never suspend the last active owner.
+      const activeOwners = list.filter(e => e.role === 'owner' && e.status === 'active');
+      if (emp.role === 'owner' && emp.status === 'active' && activeOwners.length <= 1) {
+        if (typeof toast === 'function') toast({ title:'لا يمكن الإيقاف', message:'لا يمكن إيقاف آخر مدير نشط في النظام', type:'error' });
+        return;
+      }
+      const me = currentUser();
+      if (me && me.id === id && emp.status === 'active') {
+        if (typeof toast === 'function') toast({ title:'لا يمكن الإيقاف', message:'لا يمكنك إيقاف حسابك الحالي', type:'error' });
+        return;
+      }
+      emp.status = emp.status === 'active' ? 'suspended' : 'active';
+      emp.updatedAt = new Date().toISOString();
+      saveEmployees(list);
+      window.renderEmployeesPage();
+      if (typeof toast === 'function') toast({
+        title: emp.status === 'active' ? 'تم التنشيط' : 'تم الإيقاف',
+        message: `حساب "${emp.name}" الآن ${emp.status === 'active' ? 'نشط' : 'موقوف'}`,
+        type: emp.status === 'active' ? 'success' : 'warning',
+      });
+    };
+
+    window.empResetPin = (id) => {
+      const emp = getEmployees().find(x => x.id === id);
+      if (!emp) return;
+      // Open modal in edit mode focused on PIN (we reuse the existing modal)
+      openEmployeeModal(emp);
+      setTimeout(() => pinInput.focus(), 250);
+    };
+
+    // ─── On login: apply permissions, show pill, navigate to default page ───
+    function onUserReady(user) {
+      if (!user || !user.role) return;
+      applyRolePermissions(user.role);
+      showUserPill(user);
+      // If current active page is forbidden, redirect to default
+      const activeNav = document.querySelector('.nav-btn.active');
+      const activePage = activeNav ? activeNav.dataset.page : 'dashboard';
+      if (!isPageAllowedForRole(activePage, user.role)) {
+        navigateToDefault(user.role);
+      }
+    }
+    document.addEventListener('pharmacy:login', (e) => onUserReady(e.detail));
+
+    // If session already exists at page load (e.g., refresh), apply immediately.
+    const u = currentUser();
+    if (u && u.role) onUserReady(u);
+  })();
+  </script>
+
+  <!-- ═════════════════════ ACCOUNTANT MODULE  ·  Expenses / Debts / Salaries / Returns / Logs / Export ═════════════════════ -->
+  <script>
+  (function () {
+    // ─── Storage keys ───────────────────────────────────────────────
+    const KEYS = {
+      expenses: 'pharmacy_expenses',
+      debts:    'pharmacy_debts',
+      salaries: 'pharmacy_salaries',
+      returns:  'pharmacy_returns',
+      finlog:   'pharmacy_financial_log',
+    };
+
+    const $ = id => document.getElementById(id);
+    const todayISODate = () => new Date().toISOString().slice(0, 10);
+    const monthISO = () => new Date().toISOString().slice(0, 7);
+
+    function load(key, def = []) {
+      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : def; }
+      catch (_) { return def; }
+    }
+    function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (_) {} }
+    function uid(prefix = 'id') { return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); }
+    function currentUserSafe() {
+      try { return JSON.parse(sessionStorage.getItem('pharmacy_current_user') || 'null'); }
+      catch (_) { return null; }
+    }
+
+    // ─── Number / date / currency formatting ────────────────────────
+    function fmtNum(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+    function fmtCurrency(n) { return `${fmtNum(n)} د.ع`; }
+    function fmtDate(d) {
+      if (!d) return '—';
+      try { return new Date(d).toLocaleDateString('ar-EG', { day:'numeric', month:'long', year:'numeric', numberingSystem:'latn' }); }
+      catch (_) { return '—'; }
+    }
+    function fmtDateShort(d) {
+      if (!d) return '—';
+      try { return new Date(d).toLocaleDateString('en-GB'); } catch (_) { return '—'; }
+    }
+    function fmtMonth(m) {
+      if (!m) return '—';
+      try {
+        const [y, mo] = m.split('-');
+        const dt = new Date(Number(y), Number(mo) - 1, 1);
+        return dt.toLocaleDateString('ar-EG', { month:'long', year:'numeric', numberingSystem:'latn' });
+      } catch (_) { return m; }
+    }
+    function startOfDay(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
+
+    // ─── Helpers reading existing invoices state ────────────────────
+    // `invoices` is declared with `let` in the main inline script — it lives in
+    // global lexical scope (not on window), so we read it via try/typeof.
+    function getInvoices() {
+      try { if (typeof invoices !== 'undefined' && Array.isArray(invoices)) return invoices; } catch (_) {}
+      if (Array.isArray(window.invoices)) return window.invoices;
+      try { return JSON.parse(localStorage.getItem('pharmacy_invoices') || '[]'); } catch (_) { return []; }
+    }
+    function getEmployees()   { return (window.PharmacyAuth && window.PharmacyAuth.loadEmployees) ? window.PharmacyAuth.loadEmployees() : []; }
+    function isInvRefunded(inv) { return !!(inv && inv.status === 'refunded'); }
+
+    function todayInvoices() { const t = todayISODate(); return getInvoices().filter(i => (i.date || '').startsWith(t) && !isInvRefunded(i)); }
+    function todaySalesTotal() { return todayInvoices().reduce((s, i) => s + (Number(i.total) || 0), 0); }
+    function todayExpensesTotal() {
+      const t = todayISODate();
+      return load(KEYS.expenses).filter(e => (e.date || '').slice(0, 10) === t).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    }
+
+    // ─── Financial log ──────────────────────────────────────────────
+    function fLog(action, description, meta = {}) {
+      const list = load(KEYS.finlog);
+      const u = currentUserSafe();
+      list.push({
+        id: uid('fl'),
+        action, description,
+        user: u ? `${u.name} (${u.title || u.role})` : 'النظام',
+        userId: u ? u.id : null,
+        createdAt: new Date().toISOString(),
+        meta,
+      });
+      if (list.length > 500) list.splice(0, list.length - 500);
+      save(KEYS.finlog, list);
+      // Also surface in main activity timeline if present
+      try { if (typeof logActivity === 'function') logActivity('med_edited', action, description, meta); } catch (_) {}
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ACCOUNTANT DASHBOARD (accountantHome)
+    // ═══════════════════════════════════════════════════════════════
+    window.renderAccountantHome = function () {
+      const today = todayISODate();
+      const todaySales = todaySalesTotal();
+      const todayExp   = todayExpensesTotal();
+      const todayProfit = todaySales - todayExp;
+      const allDebts = load(KEYS.debts);
+      const remainingDebts = allDebts.reduce((s, d) => s + Math.max(0, (Number(d.totalAmount) || 0) - (Number(d.paidAmount) || 0)), 0);
+      const debtsWithRem = allDebts.filter(d => Math.max(0, (Number(d.totalAmount) || 0) - (Number(d.paidAmount) || 0)) > 0);
+      const allRet = load(KEYS.returns);
+      const refundedCount = getInvoices().filter(isInvRefunded).length;
+      const salaries = load(KEYS.salaries);
+      const salTotal = salaries.reduce((s, x) => s + (Number(x.amount) || 0), 0);
+      const unpaidSal = salaries.filter(s => s.status !== 'paid');
+      const unpaidSalSum = unpaidSal.reduce((s, x) => s + (Number(x.amount) || 0), 0);
+
+      const set = (id, v) => { if ($(id)) $(id).textContent = v; };
+      set('accTodayDate', new Date().toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric', numberingSystem:'latn' }));
+      set('accStatTodaySales', fmtCurrency(todaySales));
+      set('accStatTodayProfit', fmtCurrency(todayProfit));
+      set('accStatTodayExpenses', fmtCurrency(todayExp));
+      set('accStatInvoices', fmtNum(getInvoices().length));
+      set('accStatDebts', fmtCurrency(remainingDebts));
+      set('accStatDebtsCount', debtsWithRem.length);
+      set('accStatReturns', fmtNum(allRet.length + refundedCount));
+      set('accStatSalariesTotal', fmtCurrency(salTotal));
+      set('accStatSalariesUnpaid', fmtCurrency(unpaidSalSum));
+      set('accStatSalariesUnpaidCount', unpaidSal.length);
+
+      // Recent expenses
+      const recentExp = load(KEYS.expenses).slice().sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+      const recBox = $('accRecentExpenses');
+      if (recBox) {
+        if (recentExp.length === 0) recBox.innerHTML = '<p class="empty-state">لا توجد مصاريف بعد</p>';
+        else recBox.innerHTML = recentExp.map(e => `
+          <div class="recent-item">
+            <div class="info"><strong>${e.description || '—'}</strong><span>${fmtDate(e.date)} · ${EXPENSE_CATEGORY_LABELS[e.category] || ''}</span></div>
+            <div class="amount">${fmtCurrency(e.amount)}</div>
+          </div>
+        `).join('');
+      }
+
+      // Upcoming debts
+      const dueSoon = allDebts.filter(d => {
+        const rem = Math.max(0, (Number(d.totalAmount)||0) - (Number(d.paidAmount)||0));
+        return rem > 0;
+      }).sort((a,b) => new Date(a.dueDate || '9999') - new Date(b.dueDate || '9999')).slice(0, 5);
+      const dbBox = $('accRecentDebts');
+      if (dbBox) {
+        if (dueSoon.length === 0) dbBox.innerHTML = '<p class="empty-state">لا توجد ديون مستحقة</p>';
+        else dbBox.innerHTML = dueSoon.map(d => {
+          const rem = Math.max(0, (Number(d.totalAmount)||0) - (Number(d.paidAmount)||0));
+          const overdue = d.dueDate && new Date(d.dueDate) < startOfDay(new Date());
+          return `
+            <div class="recent-item ${overdue ? 'danger' : 'warn'}">
+              <div class="info"><strong>${d.customerName}</strong><span>${d.dueDate ? 'استحقاق ' + fmtDate(d.dueDate) : 'بدون تاريخ'}${overdue ? ' · متأخر' : ''}</span></div>
+              <div class="amount">${fmtCurrency(rem)}</div>
+            </div>
+          `;
+        }).join('');
+      }
+    };
+
+    // ═══════════════════════════════════════════════════════════════
+    // EXPENSES (الأرباح والمصاريف)
+    // ═══════════════════════════════════════════════════════════════
+    const EXPENSE_CATEGORY_LABELS = {
+      rent:'إيجار', utilities:'فواتير خدمات', supplies:'مستلزمات',
+      maintenance:'صيانة', marketing:'تسويق', other:'أخرى',
+    };
+    let pxRange = 'all';
+    let pxSearchTerm = '';
+    let editingExpenseId = null;
+
+    function inRange(dateStr, range) {
+      if (range === 'all' || !dateStr) return true;
+      const d = startOfDay(new Date(dateStr));
+      const today = startOfDay(new Date());
+      if (range === 'today') return d.getTime() === today.getTime();
+      if (range === 'week') { const w = new Date(today); w.setDate(w.getDate() - 6); return d >= w; }
+      if (range === 'month') { const m = new Date(today.getFullYear(), today.getMonth(), 1); return d >= m; }
+      return true;
+    }
+    function filteredExpenses() {
+      const term = (pxSearchTerm || '').toLowerCase().trim();
+      return load(KEYS.expenses).filter(e => {
+        if (!inRange(e.date, pxRange)) return false;
+        if (!term) return true;
+        return (e.description || '').toLowerCase().includes(term)
+            || (e.notes || '').toLowerCase().includes(term)
+            || (EXPENSE_CATEGORY_LABELS[e.category] || '').toLowerCase().includes(term);
+      });
+    }
+    function filteredInvoicesForRange() {
+      return getInvoices().filter(i => !isInvRefunded(i) && inRange(i.date, pxRange));
+    }
+
+    window.renderProfitsExpenses = function () {
+      const filteredExp = filteredExpenses().slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+      const invs = filteredInvoicesForRange();
+      const income = invs.reduce((s, i) => s + (Number(i.total) || 0), 0);
+      const expenses = filteredExp.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+      const profit = income - expenses;
+      const margin = income > 0 ? Math.round((profit / income) * 100) : 0;
+
+      const set = (id, v, attr) => { if ($(id)) $(id)[attr || 'textContent'] = v; };
+      set('pxIncome', fmtCurrency(income));
+      set('pxExpenses', fmtCurrency(expenses));
+      set('pxExpensesCount', filteredExp.length);
+      set('pxProfit', fmtCurrency(profit));
+      set('pxMargin', `${margin}%`);
+      const ptr = $('pxProfitTrend');
+      if (ptr) {
+        ptr.textContent = profit >= 0 ? '✅ ربح' : '⚠️ خسارة';
+      }
+      const rangeLabels = { all:'جميع الفترات', today:'اليوم', week:'آخر 7 أيام', month:'هذا الشهر' };
+      const lbl = $('pxIncomeRange'); if (lbl) lbl.textContent = rangeLabels[pxRange] || 'جميع الفترات';
+
+      // Table
+      const body = $('expensesBody');
+      const mob  = $('expensesMobileList');
+      if (filteredExp.length === 0) {
+        const empty = `<div class="acc-empty-state"><div class="icon">💸</div><h4>لا توجد مصاريف</h4><p>اضغط "إضافة مصروف" لتسجيل أول عملية صرف</p></div>`;
+        if (body) body.innerHTML = `<tr><td colspan="6">${empty}</td></tr>`;
+        if (mob) mob.innerHTML = empty;
+        return;
+      }
+      if (body) body.innerHTML = filteredExp.map(e => `
+        <tr data-id="${e.id}">
+          <td>${fmtDate(e.date)}</td>
+          <td><strong>${e.description || '—'}</strong></td>
+          <td>${EXPENSE_CATEGORY_LABELS[e.category] || e.category}</td>
+          <td class="num"><span class="amount-cell expense">${fmtCurrency(e.amount)}</span></td>
+          <td>${(e.notes || '—').toString().slice(0,80)}</td>
+          <td>
+            <div class="emp-actions">
+              <button class="acc-action-btn" onclick="window.expEdit('${e.id}')">✏️ تعديل</button>
+              <button class="acc-action-btn danger" onclick="window.expDelete('${e.id}')">🗑️ حذف</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+      if (mob) mob.innerHTML = filteredExp.map(e => `
+        <div class="acc-mobile-card">
+          <div class="acc-mobile-card-top">
+            <div><strong>${e.description || '—'}</strong><small>${fmtDate(e.date)}</small></div>
+            <span class="amount-cell expense">${fmtCurrency(e.amount)}</span>
+          </div>
+          <div class="acc-mobile-rows">
+            <div class="acc-mobile-row"><span class="lbl">الفئة</span><span class="val">${EXPENSE_CATEGORY_LABELS[e.category] || '—'}</span></div>
+            ${e.notes ? `<div class="acc-mobile-row"><span class="lbl">ملاحظات</span><span class="val">${e.notes}</span></div>` : ''}
+          </div>
+          <div class="acc-mobile-actions">
+            <button class="acc-action-btn" onclick="window.expEdit('${e.id}')">✏️ تعديل</button>
+            <button class="acc-action-btn danger" onclick="window.expDelete('${e.id}')">🗑️ حذف</button>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    function openExpenseModal(item) {
+      editingExpenseId = item ? item.id : null;
+      $('expenseModalTitle').textContent = item ? '✏️ تعديل مصروف' : '➕ إضافة مصروف';
+      $('expDescInput').value = item ? item.description : '';
+      $('expCategoryInput').value = item ? (item.category || 'other') : 'other';
+      $('expAmountInput').value = item ? item.amount : '';
+      $('expDateInput').value = item ? (item.date || todayISODate()).slice(0,10) : todayISODate();
+      $('expNotesInput').value = item ? (item.notes || '') : '';
+      $('expenseModal').querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+      $('expenseModal').classList.add('active');
+      setTimeout(() => $('expDescInput').focus(), 150);
+    }
+    function closeExpenseModal() { $('expenseModal').classList.remove('active'); editingExpenseId = null; }
+    $('openAddExpenseBtn')?.addEventListener('click', () => openExpenseModal(null));
+    $('closeExpenseModal')?.addEventListener('click', closeExpenseModal);
+    $('cancelExpenseBtn')?.addEventListener('click', closeExpenseModal);
+    $('expenseForm')?.addEventListener('submit', e => {
+      e.preventDefault();
+      const desc = $('expDescInput').value.trim();
+      const amount = parseFloat($('expAmountInput').value);
+      const date = $('expDateInput').value;
+      const cat = $('expCategoryInput').value;
+      const notes = $('expNotesInput').value.trim();
+
+      const fail = (id, msg) => { const g = $(id).closest('.form-group'); g.classList.add('has-error'); const e = g.querySelector('.error-msg'); if (e && msg) e.textContent = msg; };
+      let ok = true;
+      $('expenseModal').querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+      if (!desc) { fail('expDescInput'); ok = false; }
+      if (!amount || amount <= 0 || isNaN(amount)) { fail('expAmountInput'); ok = false; }
+      if (!date) { fail('expDateInput'); ok = false; }
+      if (!ok) { toast({ title:'خطأ في النموذج', message:'تحقق من الحقول', type:'error' }); return; }
+
+      const list = load(KEYS.expenses);
+      if (editingExpenseId) {
+        const idx = list.findIndex(x => x.id === editingExpenseId);
+        if (idx >= 0) {
+          list[idx] = { ...list[idx], description: desc, amount, category: cat, date, notes, updatedAt: new Date().toISOString() };
+          save(KEYS.expenses, list);
+          fLog('تعديل مصروف', `تم تعديل "${desc}" بقيمة ${fmtCurrency(amount)}`, { id: editingExpenseId });
+          toast({ title:'تم التحديث', message:`تم تعديل "${desc}"`, type:'success' });
+        }
+      } else {
+        const item = { id: uid('exp'), description: desc, amount, category: cat, date, notes, createdAt: new Date().toISOString() };
+        list.push(item);
+        save(KEYS.expenses, list);
+        fLog('إضافة مصروف', `${desc} · ${fmtCurrency(amount)}`, { id: item.id, amount });
+        toast({ title:'تمت الإضافة', message:`مصروف بقيمة ${fmtCurrency(amount)}`, type:'success' });
+      }
+      closeExpenseModal();
+      window.renderProfitsExpenses();
+      if (document.getElementById('accountantHome')?.classList.contains('active')) window.renderAccountantHome();
+    });
+
+    window.expEdit = id => { const e = load(KEYS.expenses).find(x => x.id === id); if (e) openExpenseModal(e); };
+    window.expDelete = id => {
+      const list = load(KEYS.expenses);
+      const e = list.find(x => x.id === id);
+      if (!e) return;
+      const next = list.filter(x => x.id !== id);
+      const proceed = () => {
+        save(KEYS.expenses, next);
+        fLog('حذف مصروف', `تم حذف "${e.description}" بقيمة ${fmtCurrency(e.amount)}`, { id });
+        window.renderProfitsExpenses();
+        toast({ title:'تم الحذف', message:`تم حذف "${e.description}"`, type:'warning' });
+      };
+      if (typeof window.showConfirmModal === 'function') {
+        window.showConfirmModal({ title:'حذف المصروف', message:`هل تريد حذف "${e.description}"؟`, confirmText:'حذف', onConfirm: proceed });
+      } else if (confirm(`حذف "${e.description}"؟`)) proceed();
+    };
+
+    $('expenseSearch')?.addEventListener('input', e => { pxSearchTerm = e.target.value; window.renderProfitsExpenses(); });
+    document.querySelectorAll('[data-filter-set="px-range"] .pill').forEach(p => {
+      p.addEventListener('click', () => {
+        document.querySelectorAll('[data-filter-set="px-range"] .pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+        pxRange = p.dataset.pxRange;
+        window.renderProfitsExpenses();
+      });
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // DEBTS (ديون العملاء)
+    // ═══════════════════════════════════════════════════════════════
+    let dbSearchTerm = '';
+    let dbStatusFilter = 'all';
+    let editingDebtId = null;
+
+    function debtStatus(d) {
+      const total = Number(d.totalAmount) || 0;
+      const paid = Number(d.paidAmount) || 0;
+      if (paid >= total && total > 0) return 'paid';
+      if (paid > 0) return 'partial';
+      if (d.dueDate && new Date(d.dueDate) < startOfDay(new Date())) return 'overdue';
+      return 'unpaid';
+    }
+    function filteredDebts() {
+      const term = (dbSearchTerm || '').toLowerCase().trim();
+      return load(KEYS.debts).filter(d => {
+        if (dbStatusFilter !== 'all' && debtStatus(d) !== dbStatusFilter) return false;
+        if (!term) return true;
+        return (d.customerName || '').toLowerCase().includes(term) || (d.phone || '').includes(term);
+      });
+    }
+
+    window.renderDebtsPage = function () {
+      const all = load(KEYS.debts);
+      const total = all.reduce((s, d) => s + (Number(d.totalAmount) || 0), 0);
+      const paid  = all.reduce((s, d) => s + (Number(d.paidAmount) || 0), 0);
+      const remaining = Math.max(0, total - paid);
+      const overdue = all.filter(d => debtStatus(d) === 'overdue').length;
+
+      const set = (id, v) => { if ($(id)) $(id).textContent = v; };
+      set('dbStatTotal', fmtCurrency(total));
+      set('dbStatCount', all.length);
+      set('dbStatPaid', fmtCurrency(paid));
+      set('dbStatRemaining', fmtCurrency(remaining));
+      set('dbStatOverdue', overdue);
+
+      const list = filteredDebts().slice().sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      const body = $('debtsBody');
+      const mob  = $('debtsMobileList');
+      if (list.length === 0) {
+        const empty = `<div class="acc-empty-state"><div class="icon">💳</div><h4>لا توجد ديون</h4><p>اضغط "إضافة دين" لتسجيل أول دين عميل</p></div>`;
+        if (body) body.innerHTML = `<tr><td colspan="8">${empty}</td></tr>`;
+        if (mob)  mob.innerHTML  = empty;
+        return;
+      }
+      if (body) body.innerHTML = list.map(d => {
+        const st = debtStatus(d);
+        const rem = Math.max(0, (Number(d.totalAmount) || 0) - (Number(d.paidAmount) || 0));
+        const labels = { paid:'مسدد', unpaid:'غير مسدد', partial:'جزئي', overdue:'متأخر' };
+        return `
+          <tr data-id="${d.id}">
+            <td><strong>${d.customerName}</strong></td>
+            <td><bdi>${d.phone || '—'}</bdi></td>
+            <td class="num"><span class="amount-cell">${fmtCurrency(d.totalAmount)}</span></td>
+            <td class="num"><span class="amount-cell paid">${fmtCurrency(d.paidAmount || 0)}</span></td>
+            <td class="num"><span class="amount-cell remaining">${fmtCurrency(rem)}</span></td>
+            <td>${fmtDate(d.dueDate)}</td>
+            <td><span class="pill-status ${st}"><span class="dot"></span>${labels[st]}</span></td>
+            <td>
+              <div class="emp-actions">
+                ${rem > 0 ? `<button class="acc-action-btn success" onclick="window.dbPayment('${d.id}')">💵 دفعة</button>` : ''}
+                <button class="acc-action-btn" onclick="window.dbEdit('${d.id}')">✏️</button>
+                <button class="acc-action-btn danger" onclick="window.dbDelete('${d.id}')">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      if (mob) mob.innerHTML = list.map(d => {
+        const st = debtStatus(d);
+        const rem = Math.max(0, (Number(d.totalAmount) || 0) - (Number(d.paidAmount) || 0));
+        const labels = { paid:'مسدد', unpaid:'غير مسدد', partial:'جزئي', overdue:'متأخر' };
+        return `
+          <div class="acc-mobile-card">
+            <div class="acc-mobile-card-top">
+              <div><strong>${d.customerName}</strong><small><bdi>${d.phone || ''}</bdi></small></div>
+              <span class="pill-status ${st}"><span class="dot"></span>${labels[st]}</span>
+            </div>
+            <div class="acc-mobile-rows">
+              <div class="acc-mobile-row"><span class="lbl">المبلغ</span><span class="val">${fmtCurrency(d.totalAmount)}</span></div>
+              <div class="acc-mobile-row"><span class="lbl">المدفوع</span><span class="val">${fmtCurrency(d.paidAmount || 0)}</span></div>
+              <div class="acc-mobile-row"><span class="lbl">المتبقي</span><span class="val">${fmtCurrency(rem)}</span></div>
+              <div class="acc-mobile-row"><span class="lbl">الاستحقاق</span><span class="val">${fmtDate(d.dueDate)}</span></div>
+            </div>
+            <div class="acc-mobile-actions">
+              ${rem > 0 ? `<button class="acc-action-btn success" onclick="window.dbPayment('${d.id}')">💵 دفعة</button>` : ''}
+              <button class="acc-action-btn" onclick="window.dbEdit('${d.id}')">✏️</button>
+              <button class="acc-action-btn danger" onclick="window.dbDelete('${d.id}')">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    function openDebtModal(item) {
+      editingDebtId = item ? item.id : null;
+      $('debtModalTitle').textContent = item ? '✏️ تعديل دين' : '➕ إضافة دين عميل';
+      $('dbCustomerInput').value = item ? item.customerName : '';
+      $('dbPhoneInput').value    = item ? (item.phone || '') : '';
+      $('dbTotalInput').value    = item ? item.totalAmount : '';
+      $('dbPaidInput').value     = item ? (item.paidAmount || 0) : 0;
+      $('dbDueInput').value      = item ? (item.dueDate || '') : '';
+      $('dbStatusInput').value   = item ? (item.status || 'unpaid') : 'unpaid';
+      $('dbNotesInput').value    = item ? (item.notes || '') : '';
+      $('debtModal').querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+      $('debtModal').classList.add('active');
+      setTimeout(() => $('dbCustomerInput').focus(), 150);
+    }
+    function closeDebtModal() { $('debtModal').classList.remove('active'); editingDebtId = null; }
+    $('openAddDebtBtn')?.addEventListener('click', () => openDebtModal(null));
+    $('closeDebtModal')?.addEventListener('click', closeDebtModal);
+    $('cancelDebtBtn')?.addEventListener('click', closeDebtModal);
+    $('debtForm')?.addEventListener('submit', e => {
+      e.preventDefault();
+      const fail = (id) => $(id).closest('.form-group').classList.add('has-error');
+      $('debtModal').querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+      const name = $('dbCustomerInput').value.trim();
+      const total = parseFloat($('dbTotalInput').value);
+      const paid = parseFloat($('dbPaidInput').value) || 0;
+      let ok = true;
+      if (!name) { fail('dbCustomerInput'); ok = false; }
+      if (!total || total <= 0) { fail('dbTotalInput'); ok = false; }
+      if (!ok) { toast({ title:'خطأ', message:'تحقق من الحقول', type:'error' }); return; }
+      const data = {
+        customerName: name, phone: $('dbPhoneInput').value.trim(),
+        totalAmount: total, paidAmount: Math.min(paid, total),
+        dueDate: $('dbDueInput').value || null, status: $('dbStatusInput').value,
+        notes: $('dbNotesInput').value.trim(),
+      };
+      const list = load(KEYS.debts);
+      if (editingDebtId) {
+        const i = list.findIndex(x => x.id === editingDebtId);
+        if (i >= 0) { list[i] = { ...list[i], ...data, updatedAt: new Date().toISOString() }; save(KEYS.debts, list); }
+        fLog('تعديل دين', `تعديل دين العميل "${name}"`, { id: editingDebtId });
+        toast({ title:'تم التحديث', message:`تم تعديل دين "${name}"`, type:'success' });
+      } else {
+        const item = { id: uid('db'), ...data, paymentHistory: [], createdAt: new Date().toISOString() };
+        if (item.paidAmount > 0) item.paymentHistory.push({ amount: item.paidAmount, date: new Date().toISOString() });
+        list.push(item);
+        save(KEYS.debts, list);
+        fLog('إضافة دين', `دين جديد لـ "${name}" بقيمة ${fmtCurrency(total)}`, { id: item.id });
+        toast({ title:'تمت الإضافة', message:`دين العميل "${name}" تم تسجيله`, type:'success' });
+      }
+      closeDebtModal();
+      window.renderDebtsPage();
+      if (document.getElementById('accountantHome')?.classList.contains('active')) window.renderAccountantHome();
+    });
+
+    window.dbEdit = id => { const d = load(KEYS.debts).find(x => x.id === id); if (d) openDebtModal(d); };
+    window.dbDelete = id => {
+      const list = load(KEYS.debts);
+      const d = list.find(x => x.id === id);
+      if (!d) return;
+      const proceed = () => {
+        save(KEYS.debts, list.filter(x => x.id !== id));
+        fLog('حذف دين', `حذف دين "${d.customerName}"`, { id });
+        window.renderDebtsPage();
+        toast({ title:'تم الحذف', message:`تم حذف دين "${d.customerName}"`, type:'warning' });
+      };
+      if (typeof window.showConfirmModal === 'function') {
+        window.showConfirmModal({ title:'حذف الدين', message:`حذف دين "${d.customerName}"؟`, confirmText:'حذف', onConfirm: proceed });
+      } else if (confirm(`حذف دين "${d.customerName}"؟`)) proceed();
+    };
+    window.dbPayment = id => {
+      const list = load(KEYS.debts);
+      const d = list.find(x => x.id === id);
+      if (!d) return;
+      const rem = Math.max(0, (Number(d.totalAmount)||0) - (Number(d.paidAmount)||0));
+      const v = prompt(`أدخل قيمة الدفعة لـ "${d.customerName}" (المتبقي: ${fmtCurrency(rem)})`, rem);
+      const amt = parseFloat(v);
+      if (!amt || amt <= 0 || isNaN(amt)) return;
+      const pay = Math.min(amt, rem);
+      d.paidAmount = (Number(d.paidAmount)||0) + pay;
+      d.paymentHistory = d.paymentHistory || [];
+      d.paymentHistory.push({ amount: pay, date: new Date().toISOString() });
+      if (d.paidAmount >= d.totalAmount) d.status = 'paid';
+      else d.status = 'partial';
+      save(KEYS.debts, list);
+      fLog('سداد دين', `دفعة ${fmtCurrency(pay)} من "${d.customerName}"`, { id, amount: pay });
+      window.renderDebtsPage();
+      if (document.getElementById('accountantHome')?.classList.contains('active')) window.renderAccountantHome();
+      toast({ title:'تم تسجيل الدفعة', message:`دفعة ${fmtCurrency(pay)} من ${d.customerName}`, type:'success' });
+    };
+
+    $('debtSearch')?.addEventListener('input', e => { dbSearchTerm = e.target.value; window.renderDebtsPage(); });
+    document.querySelectorAll('[data-filter-set="db-status"] .pill').forEach(p => {
+      p.addEventListener('click', () => {
+        document.querySelectorAll('[data-filter-set="db-status"] .pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+        dbStatusFilter = p.dataset.dbStatus;
+        window.renderDebtsPage();
+      });
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // SALARIES (رواتب الموظفين)
+    // ═══════════════════════════════════════════════════════════════
+    let slSearchTerm = '';
+    let slStatusFilter = 'all';
+    let slMonthFilter = '';
+    let editingSalaryId = null;
+
+    const ROLE_LABEL = { pharmacist:'صيدلاني', accountant:'محاسب', owner:'مدير / أونر' };
+    const ROLE_ICON  = { pharmacist:'💊', accountant:'🧮', owner:'👑' };
+
+    function filteredSalaries() {
+      const term = (slSearchTerm || '').toLowerCase().trim();
+      return load(KEYS.salaries).filter(s => {
+        if (slStatusFilter !== 'all' && s.status !== slStatusFilter) return false;
+        if (slMonthFilter && (s.month || '') !== slMonthFilter) return false;
+        if (!term) return true;
+        return (s.employeeName || '').toLowerCase().includes(term);
+      });
+    }
+
+    window.renderSalariesPage = function () {
+      // Populate employee select
+      const empSel = $('slEmployeeInput');
+      if (empSel && empSel.options.length <= 1) {
+        const emps = getEmployees();
+        empSel.innerHTML = '<option value="">-- اختر الموظف --</option>' +
+          emps.map(e => `<option value="${e.id}">${ROLE_ICON[e.role] || ''} ${e.name} (${ROLE_LABEL[e.role] || e.role})</option>`).join('');
+      }
+
+      const all = load(KEYS.salaries);
+      const total = all.reduce((s, x) => s + (Number(x.amount) || 0), 0);
+      const paid = all.filter(x => x.status === 'paid');
+      const unpaid = all.filter(x => x.status !== 'paid');
+      const paidSum = paid.reduce((s, x) => s + (Number(x.amount) || 0), 0);
+      const unpaidSum = unpaid.reduce((s, x) => s + (Number(x.amount) || 0), 0);
+      const uniqueEmps = new Set(all.map(x => x.employeeId)).size;
+
+      const set = (id, v) => { if ($(id)) $(id).textContent = v; };
+      set('slStatTotal', fmtCurrency(total));
+      set('slStatCount', all.length);
+      set('slStatPaid', fmtCurrency(paidSum));
+      set('slStatPaidCount', paid.length);
+      set('slStatUnpaid', fmtCurrency(unpaidSum));
+      set('slStatUnpaidCount', unpaid.length);
+      set('slStatEmployees', uniqueEmps);
+
+      const list = filteredSalaries().slice().sort((a,b) => (b.month || '').localeCompare(a.month || ''));
+      const body = $('salariesBody');
+      const mob  = $('salariesMobileList');
+      if (list.length === 0) {
+        const empty = `<div class="acc-empty-state"><div class="icon">💵</div><h4>لا توجد رواتب مسجلة</h4><p>اضغط "إضافة راتب" لتسجيل أول راتب</p></div>`;
+        if (body) body.innerHTML = `<tr><td colspan="7">${empty}</td></tr>`;
+        if (mob)  mob.innerHTML  = empty;
+        return;
+      }
+      if (body) body.innerHTML = list.map(s => `
+        <tr data-id="${s.id}">
+          <td><strong>${s.employeeName}</strong></td>
+          <td><span class="role-tag ${s.employeeRole || 'pharmacist'}">${ROLE_ICON[s.employeeRole] || ''} ${ROLE_LABEL[s.employeeRole] || '—'}</span></td>
+          <td class="num"><span class="amount-cell">${fmtCurrency(s.amount)}</span></td>
+          <td>${fmtMonth(s.month)}</td>
+          <td>${fmtDate(s.paymentDate)}</td>
+          <td><span class="pill-status ${s.status}"><span class="dot"></span>${s.status === 'paid' ? 'مدفوع' : 'غير مدفوع'}</span></td>
+          <td>
+            <div class="emp-actions">
+              <button class="acc-action-btn ${s.status === 'paid' ? 'warn' : 'success'}" onclick="window.slToggle('${s.id}')">${s.status === 'paid' ? '↩️ إلغاء' : '✅ دفع'}</button>
+              <button class="acc-action-btn" onclick="window.slEdit('${s.id}')">✏️</button>
+              <button class="acc-action-btn danger" onclick="window.slDelete('${s.id}')">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+      if (mob) mob.innerHTML = list.map(s => `
+        <div class="acc-mobile-card">
+          <div class="acc-mobile-card-top">
+            <div><strong>${s.employeeName}</strong><small>${fmtMonth(s.month)}</small></div>
+            <span class="pill-status ${s.status}"><span class="dot"></span>${s.status === 'paid' ? 'مدفوع' : 'غير مدفوع'}</span>
+          </div>
+          <div class="acc-mobile-rows">
+            <div class="acc-mobile-row"><span class="lbl">الدور</span><span class="val">${ROLE_ICON[s.employeeRole] || ''} ${ROLE_LABEL[s.employeeRole] || '—'}</span></div>
+            <div class="acc-mobile-row"><span class="lbl">الراتب</span><span class="val">${fmtCurrency(s.amount)}</span></div>
+            <div class="acc-mobile-row"><span class="lbl">تاريخ الدفع</span><span class="val">${fmtDate(s.paymentDate)}</span></div>
+          </div>
+          <div class="acc-mobile-actions">
+            <button class="acc-action-btn ${s.status === 'paid' ? 'warn' : 'success'}" onclick="window.slToggle('${s.id}')">${s.status === 'paid' ? '↩️ إلغاء' : '✅ دفع'}</button>
+            <button class="acc-action-btn" onclick="window.slEdit('${s.id}')">✏️</button>
+            <button class="acc-action-btn danger" onclick="window.slDelete('${s.id}')">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    function openSalaryModal(item) {
+      editingSalaryId = item ? item.id : null;
+      $('salaryModalTitle').textContent = item ? '✏️ تعديل راتب' : '➕ إضافة راتب موظف';
+      // Always refresh employees list
+      const emps = getEmployees();
+      $('slEmployeeInput').innerHTML = '<option value="">-- اختر الموظف --</option>' +
+        emps.map(e => `<option value="${e.id}">${ROLE_ICON[e.role] || ''} ${e.name} (${ROLE_LABEL[e.role] || e.role})</option>`).join('');
+      $('slEmployeeInput').value = item ? item.employeeId : '';
+      $('slAmountInput').value = item ? item.amount : '';
+      $('slMonthInput').value  = item ? item.month : monthISO();
+      $('slStatusInput').value = item ? item.status : 'unpaid';
+      $('slPaymentDateInput').value = item ? (item.paymentDate || '') : '';
+      $('slNotesInput').value  = item ? (item.notes || '') : '';
+      $('salaryModal').querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+      $('salaryModal').classList.add('active');
+    }
+    function closeSalaryModal() { $('salaryModal').classList.remove('active'); editingSalaryId = null; }
+    $('openAddSalaryBtn')?.addEventListener('click', () => openSalaryModal(null));
+    $('closeSalaryModal')?.addEventListener('click', closeSalaryModal);
+    $('cancelSalaryBtn')?.addEventListener('click', closeSalaryModal);
+    $('salaryForm')?.addEventListener('submit', e => {
+      e.preventDefault();
+      const fail = (id) => $(id).closest('.form-group').classList.add('has-error');
+      $('salaryModal').querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+      const empId = $('slEmployeeInput').value;
+      const amount = parseFloat($('slAmountInput').value);
+      const month = $('slMonthInput').value;
+      const status = $('slStatusInput').value;
+      let ok = true;
+      if (!empId) { fail('slEmployeeInput'); ok = false; }
+      if (!amount || amount <= 0) { fail('slAmountInput'); ok = false; }
+      if (!month) { fail('slMonthInput'); ok = false; }
+      if (!ok) { toast({ title:'خطأ', message:'تحقق من الحقول', type:'error' }); return; }
+      const emp = getEmployees().find(x => x.id === empId);
+      if (!emp) { toast({ title:'خطأ', message:'الموظف غير موجود', type:'error' }); return; }
+      const data = {
+        employeeId: empId, employeeName: emp.name, employeeRole: emp.role,
+        amount, month, status,
+        paymentDate: $('slPaymentDateInput').value || (status === 'paid' ? todayISODate() : null),
+        notes: $('slNotesInput').value.trim(),
+      };
+      const list = load(KEYS.salaries);
+      if (editingSalaryId) {
+        const i = list.findIndex(x => x.id === editingSalaryId);
+        if (i >= 0) { list[i] = { ...list[i], ...data, updatedAt: new Date().toISOString() }; }
+        save(KEYS.salaries, list);
+        fLog('تعديل راتب', `تعديل راتب ${emp.name} لشهر ${fmtMonth(month)}`, { id: editingSalaryId });
+        toast({ title:'تم التحديث', message:`راتب "${emp.name}"`, type:'success' });
+      } else {
+        const item = { id: uid('sl'), ...data, createdAt: new Date().toISOString() };
+        list.push(item);
+        save(KEYS.salaries, list);
+        fLog('إضافة راتب', `راتب ${emp.name} (${fmtMonth(month)}) بقيمة ${fmtCurrency(amount)}`, { id: item.id });
+        toast({ title:'تمت الإضافة', message:`تم تسجيل راتب "${emp.name}"`, type:'success' });
+      }
+      closeSalaryModal();
+      window.renderSalariesPage();
+      if (document.getElementById('accountantHome')?.classList.contains('active')) window.renderAccountantHome();
+    });
+
+    window.slEdit = id => { const s = load(KEYS.salaries).find(x => x.id === id); if (s) openSalaryModal(s); };
+    window.slDelete = id => {
+      const list = load(KEYS.salaries);
+      const s = list.find(x => x.id === id);
+      if (!s) return;
+      const proceed = () => {
+        save(KEYS.salaries, list.filter(x => x.id !== id));
+        fLog('حذف راتب', `حذف راتب ${s.employeeName} (${fmtMonth(s.month)})`, { id });
+        window.renderSalariesPage();
+        toast({ title:'تم الحذف', message:`راتب "${s.employeeName}"`, type:'warning' });
+      };
+      if (typeof window.showConfirmModal === 'function') {
+        window.showConfirmModal({ title:'حذف الراتب', message:`حذف راتب "${s.employeeName}"؟`, confirmText:'حذف', onConfirm: proceed });
+      } else if (confirm(`حذف راتب "${s.employeeName}"؟`)) proceed();
+    };
+    window.slToggle = id => {
+      const list = load(KEYS.salaries);
+      const s = list.find(x => x.id === id);
+      if (!s) return;
+      s.status = s.status === 'paid' ? 'unpaid' : 'paid';
+      s.paymentDate = s.status === 'paid' ? todayISODate() : null;
+      s.updatedAt = new Date().toISOString();
+      save(KEYS.salaries, list);
+      fLog(s.status === 'paid' ? 'دفع راتب' : 'إلغاء دفع راتب', `${s.employeeName} (${fmtMonth(s.month)}) — ${fmtCurrency(s.amount)}`, { id });
+      window.renderSalariesPage();
+      if (document.getElementById('accountantHome')?.classList.contains('active')) window.renderAccountantHome();
+      toast({ title: s.status === 'paid' ? 'تم الدفع' : 'تم الإلغاء', message:`راتب "${s.employeeName}"`, type: s.status === 'paid' ? 'success' : 'warning' });
+    };
+
+    $('salarySearch')?.addEventListener('input', e => { slSearchTerm = e.target.value; window.renderSalariesPage(); });
+    $('salaryMonthFilter')?.addEventListener('input', e => { slMonthFilter = e.target.value; window.renderSalariesPage(); });
+    document.querySelectorAll('[data-filter-set="sl-status"] .pill').forEach(p => {
+      p.addEventListener('click', () => {
+        document.querySelectorAll('[data-filter-set="sl-status"] .pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+        slStatusFilter = p.dataset.slStatus;
+        window.renderSalariesPage();
+      });
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // RETURNS (المرتجعات) — combines refunded invoices + manual returns
+    // ═══════════════════════════════════════════════════════════════
+    let retSearchTerm = '';
+    let retTypeFilter = 'all';
+    let editingReturnId = null;
+
+    function getAllReturns() {
+      // Refunded invoices auto-mapped to return records (read-only)
+      const refunded = getInvoices().filter(isInvRefunded).map(inv => ({
+        id: 'inv_' + inv.id,
+        type: 'invoice',
+        ref: `فاتورة #${inv.id}`,
+        invoiceId: inv.id,
+        amount: Number(inv.total) || 0,
+        reason: 'استرجاع فاتورة من نظام البيع',
+        date: inv.refundedAt || inv.date,
+        readOnly: true,
+      }));
+      const manual = load(KEYS.returns).map(r => ({ ...r, readOnly: false }));
+      return [...refunded, ...manual];
+    }
+    function filteredReturns() {
+      const term = (retSearchTerm || '').toLowerCase().trim();
+      return getAllReturns().filter(r => {
+        if (retTypeFilter === 'invoice' && r.type !== 'invoice') return false;
+        if (retTypeFilter === 'manual' && r.type === 'invoice') return false;
+        if (!term) return true;
+        return (r.ref || '').toLowerCase().includes(term)
+            || (r.reason || '').toLowerCase().includes(term)
+            || (String(r.invoiceId || '')).includes(term);
+      });
+    }
+
+    const RET_TYPE_LABELS = { invoice:'فاتورة', product:'منتج', supplier:'مورد', other:'أخرى' };
+
+    window.renderReturnsPage = function () {
+      const all = getAllReturns();
+      const invs = all.filter(r => r.type === 'invoice');
+      const manual = all.filter(r => r.type !== 'invoice');
+      const set = (id, v) => { if ($(id)) $(id).textContent = v; };
+      set('retStatTotal', all.length);
+      set('retStatInvoices', invs.length);
+      set('retStatManual', manual.length);
+      set('retStatValue', fmtCurrency(all.reduce((s, r) => s + (Number(r.amount) || 0), 0)));
+
+      const list = filteredReturns().slice().sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+      const body = $('returnsBody');
+      const mob  = $('returnsMobileList');
+      if (list.length === 0) {
+        const empty = `<div class="acc-empty-state"><div class="icon">↩️</div><h4>لا توجد مرتجعات</h4><p>اضغط "إضافة مرتجع" لتسجيل مرتجع يدوي</p></div>`;
+        if (body) body.innerHTML = `<tr><td colspan="6">${empty}</td></tr>`;
+        if (mob)  mob.innerHTML  = empty;
+        return;
+      }
+      if (body) body.innerHTML = list.map(r => `
+        <tr>
+          <td>${fmtDate(r.date)}</td>
+          <td><span class="pill-status ${r.type === 'invoice' ? 'invoice' : 'manual'}"><span class="dot"></span>${RET_TYPE_LABELS[r.type] || r.type}</span></td>
+          <td><strong>${r.ref || '—'}</strong></td>
+          <td>${(r.reason || '—').toString().slice(0, 60)}</td>
+          <td class="num"><span class="amount-cell expense">${fmtCurrency(r.amount)}</span></td>
+          <td>
+            <div class="emp-actions">
+              ${r.readOnly ? '<span class="acc-action-btn" style="cursor:default;opacity:0.7;">🔒 من النظام</span>' : `
+                <button class="acc-action-btn" onclick="window.retEdit('${r.id}')">✏️</button>
+                <button class="acc-action-btn danger" onclick="window.retDelete('${r.id}')">🗑️</button>
+              `}
+            </div>
+          </td>
+        </tr>
+      `).join('');
+      if (mob) mob.innerHTML = list.map(r => `
+        <div class="acc-mobile-card">
+          <div class="acc-mobile-card-top">
+            <div><strong>${r.ref || '—'}</strong><small>${fmtDate(r.date)}</small></div>
+            <span class="pill-status ${r.type === 'invoice' ? 'invoice' : 'manual'}"><span class="dot"></span>${RET_TYPE_LABELS[r.type] || r.type}</span>
+          </div>
+          <div class="acc-mobile-rows">
+            <div class="acc-mobile-row"><span class="lbl">القيمة</span><span class="val">${fmtCurrency(r.amount)}</span></div>
+            <div class="acc-mobile-row"><span class="lbl">السبب</span><span class="val">${(r.reason || '—').toString().slice(0,80)}</span></div>
+          </div>
+          ${r.readOnly ? '' : `<div class="acc-mobile-actions">
+            <button class="acc-action-btn" onclick="window.retEdit('${r.id}')">✏️</button>
+            <button class="acc-action-btn danger" onclick="window.retDelete('${r.id}')">🗑️</button>
+          </div>`}
+        </div>
+      `).join('');
+    };
+
+    function openReturnModal(item) {
+      editingReturnId = item ? item.id : null;
+      $('returnModalTitle').textContent = item ? '✏️ تعديل مرتجع' : '➕ إضافة مرتجع';
+      $('retTypeInput').value   = item ? item.type : 'product';
+      $('retRefInput').value    = item ? (item.ref || '') : '';
+      $('retAmountInput').value = item ? item.amount : '';
+      $('retDateInput').value   = item ? (item.date || todayISODate()).slice(0,10) : todayISODate();
+      $('retReasonInput').value = item ? (item.reason || '') : '';
+      $('returnModal').querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+      $('returnModal').classList.add('active');
+    }
+    function closeReturnModal() { $('returnModal').classList.remove('active'); editingReturnId = null; }
+    $('openAddReturnBtn')?.addEventListener('click', () => openReturnModal(null));
+    $('closeReturnModal')?.addEventListener('click', closeReturnModal);
+    $('cancelReturnBtn')?.addEventListener('click', closeReturnModal);
+    $('returnForm')?.addEventListener('submit', e => {
+      e.preventDefault();
+      const fail = (id) => $(id).closest('.form-group').classList.add('has-error');
+      $('returnModal').querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+      const ref = $('retRefInput').value.trim();
+      const amount = parseFloat($('retAmountInput').value);
+      const date = $('retDateInput').value;
+      const reason = $('retReasonInput').value.trim();
+      let ok = true;
+      if (!ref) { fail('retRefInput'); ok = false; }
+      if (!amount || amount <= 0) { fail('retAmountInput'); ok = false; }
+      if (!date) { fail('retDateInput'); ok = false; }
+      if (!reason) { fail('retReasonInput'); ok = false; }
+      if (!ok) { toast({ title:'خطأ', message:'تحقق من الحقول', type:'error' }); return; }
+      const data = { type: $('retTypeInput').value, ref, amount, date, reason };
+      const list = load(KEYS.returns);
+      if (editingReturnId) {
+        const i = list.findIndex(x => x.id === editingReturnId);
+        if (i >= 0) list[i] = { ...list[i], ...data, updatedAt: new Date().toISOString() };
+        save(KEYS.returns, list);
+        fLog('تعديل مرتجع', `${ref} · ${fmtCurrency(amount)}`, { id: editingReturnId });
+        toast({ title:'تم التحديث', message: ref, type:'success' });
+      } else {
+        const item = { id: uid('ret'), ...data, createdAt: new Date().toISOString() };
+        list.push(item);
+        save(KEYS.returns, list);
+        fLog('إضافة مرتجع', `${ref} · ${fmtCurrency(amount)}`, { id: item.id });
+        toast({ title:'تمت الإضافة', message: ref, type:'success' });
+      }
+      closeReturnModal();
+      window.renderReturnsPage();
+      if (document.getElementById('accountantHome')?.classList.contains('active')) window.renderAccountantHome();
+    });
+    window.retEdit = id => { const r = load(KEYS.returns).find(x => x.id === id); if (r) openReturnModal(r); };
+    window.retDelete = id => {
+      const list = load(KEYS.returns);
+      const r = list.find(x => x.id === id);
+      if (!r) return;
+      const proceed = () => {
+        save(KEYS.returns, list.filter(x => x.id !== id));
+        fLog('حذف مرتجع', `${r.ref || ''}`, { id });
+        window.renderReturnsPage();
+        toast({ title:'تم الحذف', message: r.ref, type:'warning' });
+      };
+      if (typeof window.showConfirmModal === 'function') {
+        window.showConfirmModal({ title:'حذف المرتجع', message:`حذف المرتجع "${r.ref}"؟`, confirmText:'حذف', onConfirm: proceed });
+      } else if (confirm(`حذف "${r.ref}"؟`)) proceed();
+    };
+    $('returnSearch')?.addEventListener('input', e => { retSearchTerm = e.target.value; window.renderReturnsPage(); });
+    document.querySelectorAll('[data-filter-set="ret-type"] .pill').forEach(p => {
+      p.addEventListener('click', () => {
+        document.querySelectorAll('[data-filter-set="ret-type"] .pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+        retTypeFilter = p.dataset.retType;
+        window.renderReturnsPage();
+      });
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // EXPORT  ·  PDF (print) + Excel/CSV
+    // ═══════════════════════════════════════════════════════════════
+    function downloadCSV(filename, rows) {
+      const csv = rows.map(r => r.map(c => {
+        const s = (c === null || c === undefined) ? '' : String(c);
+        if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+      }).join(',')).join('\n');
+      // UTF-8 BOM so Excel renders Arabic correctly
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+    }
+    function printHTML(title, htmlBody) {
+      // Reuse existing print pattern (matches shortages/invoice printing)
+      document.getElementById('accountantPrintArea')?.remove();
+      const area = document.createElement('div');
+      area.id = 'accountantPrintArea';
+      area.style.cssText = 'display:none;direction:rtl;font-family:Cairo,Tajawal,Inter,sans-serif;';
+      const now = new Date().toLocaleString('ar-EG', { numberingSystem:'latn' });
+      area.innerHTML = `
+        <style>
+          @media print {
+            body.is-printing-acc > *:not(#accountantPrintArea) { display:none !important; }
+            body.is-printing-acc #accountantPrintArea { display:block !important; padding:0 !important; }
+            #accountantPrintArea h1 { font-size:20px; margin-bottom:4px; color:#047857; }
+            #accountantPrintArea .meta { font-size:12px; color:#64748b; margin-bottom:14px; }
+            #accountantPrintArea table { width:100%; border-collapse:collapse; font-size:12px; }
+            #accountantPrintArea th, #accountantPrintArea td { padding:6px 8px; border:1px solid #ddd; text-align:right; }
+            #accountantPrintArea th { background:#ecfdf5; color:#047857; }
+          }
+        </style>
+        <h1>صيدليتي — ${title}</h1>
+        <p class="meta">تاريخ التقرير: ${now}</p>
+        ${htmlBody}
+      `;
+      document.body.appendChild(area);
+      document.body.classList.add('is-printing-acc');
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => { area.remove(); document.body.classList.remove('is-printing-acc'); }, 800);
+      }, 100);
+    }
+
+    window.exportData = function (kind, format) {
+      const stamp = todayISODate();
+      const isPdf = format === 'pdf';
+      if (kind === 'invoices') {
+        const invs = getInvoices();
+        if (isPdf) {
+          const html = `<table><thead><tr><th>#</th><th>رقم</th><th>التاريخ</th><th>عناصر</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody>${
+            invs.map((i, idx) => `<tr><td>${idx+1}</td><td>${i.id}</td><td>${fmtDate(i.date)}</td><td>${(i.items||[]).length}</td><td>${fmtCurrency(i.total)}</td><td>${isInvRefunded(i) ? 'مسترجعة' : 'مدفوعة'}</td></tr>`).join('')
+          }</tbody></table>`;
+          printHTML('تقرير الفواتير', html);
+        } else {
+          const rows = [['رقم الفاتورة','التاريخ','عدد الأصناف','الإجمالي','الحالة','طريقة الدفع']];
+          invs.forEach(i => rows.push([i.id, i.date, (i.items||[]).length, i.total, isInvRefunded(i) ? 'مسترجعة' : 'مدفوعة', i.paymentMethodLabel || 'نقدي']));
+          downloadCSV(`invoices_${stamp}.csv`, rows);
+        }
+      } else if (kind === 'reports') {
+        const invs = getInvoices().filter(i => !isInvRefunded(i));
+        const exps = load(KEYS.expenses);
+        const income = invs.reduce((s, i) => s + (Number(i.total) || 0), 0);
+        const expenses = exps.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+        const profit = income - expenses;
+        if (isPdf) {
+          const html = `<table>
+            <tr><th>البند</th><th>القيمة</th></tr>
+            <tr><td>إجمالي الإيرادات</td><td>${fmtCurrency(income)}</td></tr>
+            <tr><td>إجمالي المصاريف</td><td>${fmtCurrency(expenses)}</td></tr>
+            <tr><td>صافي الربح</td><td><strong>${fmtCurrency(profit)}</strong></td></tr>
+            <tr><td>عدد الفواتير</td><td>${invs.length}</td></tr>
+            <tr><td>عدد المصاريف</td><td>${exps.length}</td></tr>
+          </table>`;
+          printHTML('تقرير مالي شامل', html);
+        } else {
+          const rows = [['البند','القيمة']];
+          rows.push(['إجمالي الإيرادات', income]);
+          rows.push(['إجمالي المصاريف', expenses]);
+          rows.push(['صافي الربح', profit]);
+          rows.push(['عدد الفواتير', invs.length]);
+          rows.push(['عدد المصاريف', exps.length]);
+          downloadCSV(`financial_report_${stamp}.csv`, rows);
+        }
+      } else if (kind === 'expenses') {
+        const exps = load(KEYS.expenses);
+        if (isPdf) {
+          const html = `<table><thead><tr><th>التاريخ</th><th>الوصف</th><th>الفئة</th><th>المبلغ</th><th>ملاحظات</th></tr></thead><tbody>${
+            exps.map(e => `<tr><td>${fmtDate(e.date)}</td><td>${e.description}</td><td>${EXPENSE_CATEGORY_LABELS[e.category] || ''}</td><td>${fmtCurrency(e.amount)}</td><td>${e.notes || ''}</td></tr>`).join('')
+          }</tbody></table>`;
+          printHTML('تقرير المصاريف', html);
+        } else {
+          const rows = [['التاريخ','الوصف','الفئة','المبلغ','ملاحظات']];
+          exps.forEach(e => rows.push([e.date, e.description, EXPENSE_CATEGORY_LABELS[e.category] || e.category, e.amount, e.notes || '']));
+          downloadCSV(`expenses_${stamp}.csv`, rows);
+        }
+      } else if (kind === 'salaries') {
+        const sl = load(KEYS.salaries);
+        if (isPdf) {
+          const html = `<table><thead><tr><th>الموظف</th><th>الدور</th><th>الشهر</th><th>الراتب</th><th>الحالة</th><th>تاريخ الدفع</th></tr></thead><tbody>${
+            sl.map(s => `<tr><td>${s.employeeName}</td><td>${ROLE_LABEL[s.employeeRole] || ''}</td><td>${fmtMonth(s.month)}</td><td>${fmtCurrency(s.amount)}</td><td>${s.status === 'paid' ? 'مدفوع' : 'غير مدفوع'}</td><td>${fmtDate(s.paymentDate)}</td></tr>`).join('')
+          }</tbody></table>`;
+          printHTML('تقرير الرواتب', html);
+        } else {
+          const rows = [['الموظف','الدور','الشهر','الراتب','الحالة','تاريخ الدفع']];
+          sl.forEach(s => rows.push([s.employeeName, ROLE_LABEL[s.employeeRole] || s.employeeRole, s.month, s.amount, s.status === 'paid' ? 'مدفوع' : 'غير مدفوع', s.paymentDate || '']));
+          downloadCSV(`salaries_${stamp}.csv`, rows);
+        }
+      } else if (kind === 'debts') {
+        const db = load(KEYS.debts);
+        if (isPdf) {
+          const html = `<table><thead><tr><th>العميل</th><th>الهاتف</th><th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th><th>الاستحقاق</th><th>الحالة</th></tr></thead><tbody>${
+            db.map(d => {
+              const rem = Math.max(0, (Number(d.totalAmount)||0) - (Number(d.paidAmount)||0));
+              const st = debtStatus(d);
+              return `<tr><td>${d.customerName}</td><td>${d.phone || ''}</td><td>${fmtCurrency(d.totalAmount)}</td><td>${fmtCurrency(d.paidAmount || 0)}</td><td>${fmtCurrency(rem)}</td><td>${fmtDate(d.dueDate)}</td><td>${({paid:'مسدد',unpaid:'غير مسدد',partial:'جزئي',overdue:'متأخر'})[st]}</td></tr>`;
+            }).join('')
+          }</tbody></table>`;
+          printHTML('تقرير الديون', html);
+        } else {
+          const rows = [['العميل','الهاتف','الإجمالي','المدفوع','المتبقي','الاستحقاق','الحالة']];
+          db.forEach(d => {
+            const rem = Math.max(0, (Number(d.totalAmount)||0) - (Number(d.paidAmount)||0));
+            rows.push([d.customerName, d.phone || '', d.totalAmount, d.paidAmount || 0, rem, d.dueDate || '', debtStatus(d)]);
+          });
+          downloadCSV(`debts_${stamp}.csv`, rows);
+        }
+      } else if (kind === 'returns') {
+        const ret = getAllReturns();
+        if (isPdf) {
+          const html = `<table><thead><tr><th>التاريخ</th><th>النوع</th><th>المرجع</th><th>السبب</th><th>القيمة</th></tr></thead><tbody>${
+            ret.map(r => `<tr><td>${fmtDate(r.date)}</td><td>${RET_TYPE_LABELS[r.type] || r.type}</td><td>${r.ref || ''}</td><td>${r.reason || ''}</td><td>${fmtCurrency(r.amount)}</td></tr>`).join('')
+          }</tbody></table>`;
+          printHTML('تقرير المرتجعات', html);
+        } else {
+          const rows = [['التاريخ','النوع','المرجع','السبب','القيمة']];
+          ret.forEach(r => rows.push([r.date, RET_TYPE_LABELS[r.type] || r.type, r.ref || '', r.reason || '', r.amount]));
+          downloadCSV(`returns_${stamp}.csv`, rows);
+        }
+      }
+      fLog('تصدير بيانات', `تم تصدير ${kind} بصيغة ${format.toUpperCase()}`, { kind, format });
+      toast({ title:'تم التصدير', message:`تم إعداد ${kind} (${format.toUpperCase()})`, type:'success' });
+    };
+
+    // ── Re-render the relevant accountant page when its data changes elsewhere ──
+    document.addEventListener('pharmacy:login', () => {
+      // ensure first paint when an accountant lands on accountantHome
+      setTimeout(() => {
+        if (document.getElementById('accountantHome')?.classList.contains('active')) window.renderAccountantHome();
+      }, 300);
     });
   })();
   </script>
